@@ -1,0 +1,14 @@
+#xml files
+*.xml
+
+#exe files
+*.exe
+
+Debug/
+Release/
+
+*.dll
+*.txt
+
+
+

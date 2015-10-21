@@ -1,0 +1,9 @@
+## General
+
+# Examples
+Release/
+Debug/
+*.sdf
+*.opensdf
+
+
