@@ -362,8 +362,6 @@ bool SavePhoto2EventAsXml(const vector<Photo_Feature_Set> &photos, const TCHAR* 
 		photo_node.append_child("longitude").text().set(photos[i].longitude);
 		photo_node.append_child("latitude").text().set(photos[i].latitude);
 		photo_node.append_child("attitude").text().set(photos[i].atitude);
-		photo_node.append_child("representativeness").text().set(photos[i].fRep);
-		photo_node.append_child("quality").text().set(photos[i].pflQuality);
 		photo_node.append_child("brightValue").text().set(photos[i].brightValue);
 	}
 

@@ -6,6 +6,12 @@
 #include "PVImageInfo.h"
 #include "FolderFileHelper.h"
 
+struct timeComperer
+{
+	inline bool operator()(const Photo_Feature_Set& photo1, const Photo_Feature_Set& photo2){
+		return (photo1.dTimeStamp < photo2.dTimeStamp);
+	}
+};
 
 struct PhotoExifInfo{ 
 	double longitude;

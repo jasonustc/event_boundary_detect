@@ -1,6 +1,5 @@
 #include "stdafx.h"
 #include "PhotoProcess.h"
-#include "Cluster.h"
 #include "exif.h"
 
 CPhotoProcess::CPhotoProcess()
@@ -313,93 +312,10 @@ bool CPhotoProcess::LoadPhotoFeat(wstring& photoPath, Photo_Feature_Set& PhotoFe
 int CPhotoProcess::ProcessPhotos(const TCHAR* m_UsrDir)
 {
 	// load all photos and their time-stamp information into m_vecPhotoLabel
-	int ErrCode = 0;
-	//int ErrCode = LoadPhotos(m_UsrDir); // always succeed!
-	ErrCode = GetReEventPhotos(m_UsrDir);
+	int ErrCode = LoadPhotos(m_UsrDir); // always succeed!
 	//sort photos by time
 	this->SortPhotos();
 	return ErrCode;
-}
-
-bool PhotoInVector(wstring& photoPath, vector<Photo_Feature_Set>& photoVec){
-	for (std::vector<Photo_Feature_Set>::iterator iter = photoVec.begin(); 
-		iter != photoVec.end(); ++iter){
-		string path(photoPath.begin(), photoPath.end());
-		if (strcmp(path.c_str(), (*iter).tszFileName) == 0){
-			return true;
-		}
-	}
-	return false;
-}
-
-int PhotoTimeInOldEvent(Photo_Feature_Set& photo, vector<SimpleEventInfo>& simEvents){
-	for (size_t i = 0; i < simEvents.size(); i++){
-		if (photo.dTimeStamp >= simEvents[i].startTime && photo.dTimeStamp <= simEvents[i].endTime){
-			return i;
-		}
-	}
-	//photo time is not in the time span of the events
-	return -1;
-}
-
-bool CPhotoProcess::GetReEventPhotos(const TCHAR* m_UsrDir){
-	vector<wstring> xmlFiles;
-	wstring ext = L"xml";
-	GetFilesInDirWithExt(m_UsrDir, xmlFiles, ext);
-	vector<wstring> picFiles;
-	GetImageFilesInDir(m_UsrDir, picFiles);
-	vector<Photo_Feature_Set> oldPhotos;
-	vector<SimpleEventInfo> oldEventInfos;
-	for (size_t i = 0; i < xmlFiles.size(); i++){
-		string xmlFile(xmlFiles[i].begin(), xmlFiles[i].end());
-		//currently we only consider 1 event segmentation file
-		if (!LoadEventFromXml(xmlFile, oldPhotos, oldEventInfos)){
-			break;
-		}
-	}
-	//here if the number of added photos is less than 20, we do not re-cluster
-	//TODO: adjust this threshold
-	//TODO: deal with the situation that user delete some photos
-	if (oldPhotos.size() > 0 &&  picFiles.size() < oldPhotos.size() + 5){
-		return false;
-	}
-	vector<Photo_Feature_Set> newPhotos;
-	vector<int> mergeEventIdx;
-	for (size_t i = 0; i < picFiles.size(); i++){
-		//not in the clustered photos before
-		if (!PhotoInVector(picFiles[i], oldPhotos)){
-			Photo_Feature_Set newPhoto;
-			//load photo feature
-			if (LoadPhotoFeat(picFiles[i], newPhoto)){
-				newPhotos.push_back(newPhoto);
-				//push back all related photos
-				int e = PhotoTimeInOldEvent(newPhoto, oldEventInfos);
-				if (e >= 0 && std::find(mergeEventIdx.begin(), mergeEventIdx.end(), e) == mergeEventIdx.end()){
-					for (size_t p = 0; p < oldEventInfos[e].photoIdx.size(); p++){
-						newPhotos.push_back(oldPhotos[oldEventInfos[e].photoIdx[p]]);
-					}
-					mergeEventIdx.push_back(e);
-				}
-			}
-		}
-	}
-	//reserve the info of photos that do not need to cluster again
-	int num = 0;
-	for (size_t i = 0; i < oldEventInfos.size(); i++){
-		if (std::find(mergeEventIdx.begin(), mergeEventIdx.end(), i) == mergeEventIdx.end()){
-			vector<int> eIdx;
-			for (size_t p = 0; p < oldEventInfos[i].photoIdx.size(); p++){
-				this->vecOldPhotos.push_back(oldPhotos[oldEventInfos[i].photoIdx[p]]);
-				eIdx.push_back(num);
-				num++;
-			}
-			this->vecOldEventIdx.push_back(eIdx);
-		}
-	}
-
-	//TODO: consider global information
-	this->m_vecPhotos = newPhotos;
-	return true;
 }
 
 bool FindNearestNeigh(vector<Photo_Feature_Set> &photos,const float timestamp

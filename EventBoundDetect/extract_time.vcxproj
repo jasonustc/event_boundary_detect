@@ -88,29 +88,22 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="3rdparty\pugixml.cpp" />
-    <ClCompile Include="Cluster.cpp" />
-    <ClCompile Include="Evaluate.cpp" />
     <ClCompile Include="exif.cpp" />
     <ClCompile Include="FeatureHelper.cpp" />
     <ClCompile Include="FolderFileHelper.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="Merge.cpp" />
-    <ClCompile Include="NewCluster.cpp" />
     <ClCompile Include="PhotoProcess.cpp" />
-    <ClCompile Include="PreSegment.cpp" />
     <ClCompile Include="PVImageInfo.cpp" />
     <ClCompile Include="stdafx.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="3rdparty\pugiconfig.hpp" />
     <ClInclude Include="3rdparty\pugixml.hpp" />
-    <ClInclude Include="Cluster.h" />
     <ClInclude Include="exif.h" />
     <ClInclude Include="FeatureHelper.h" />
     <ClInclude Include="FolderFileHelper.h" />
     <ClInclude Include="PhotoInfo.h" />
     <ClInclude Include="PhotoProcess.h" />
-    <ClInclude Include="PreSegment.h" />
     <ClInclude Include="PVImageInfo.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="StringHelper.h" />

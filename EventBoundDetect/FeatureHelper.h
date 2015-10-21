@@ -46,8 +46,8 @@ struct InputConfig{
 
 	InputConfig() :K(10), use_gps(false) , global_density(1), threshold(0.75), 
 		timeK(1), gpsK(1){
-		this->tszPhotoSegFile = _T("photo_event.xml");
-		this->tszEventSegFile = _T("event_photos.xml");
+		this->tszPhotoSegFile = _T("photo_feat.xml");
+		this->tszEventSegFile = _T("event_photos_feat.xml");
 		this->tszOutImageDir = _T("");
 		this->photoFeatFile = "";
 		this->eventFileTxt = "";
