@@ -52,12 +52,10 @@ int _tmain(int argc, TCHAR** argv)
 	//extract features
 	vector<Photo_Feature_Set> photos;
 	vector<SimpleEventInfo> simEventInfos;
-	vector<Photo_Feature_Set> oldPhotos;
-	vector<vector<int>> oldEventIdx;
+	vector<vector<int>> eventIdx;
 	t1 = clock();
 	if (inConfig.photoFeatFile.size() > 0){
 		LoadPhotoFromXml(inConfig.photoFeatFile, photos);
-//		LoadPhotoFromTxtFolder(inConfig.photoFeatFile, photos);
 	}
 	else if (inConfig.eventFeatXml.size() > 0){
 		LoadEventFromXml(inConfig.eventFeatXml, photos, simEventInfos);
@@ -67,98 +65,42 @@ int _tmain(int argc, TCHAR** argv)
 		CPhotoProcess photoProcess;
 		hr = photoProcess.ProcessPhotos(inConfig.tszImageDir.c_str());
 		photoProcess.GetPhotoFeats(photos);
-		photoProcess.GetOldEventIdx(oldEventIdx);
-		photoProcess.GetOldPhotoFeats(oldPhotos);
 	}
 	t2 = clock();
-	ins << "Feature extraction time: " << (t2 - t1) / CLOCKS_PER_SEC << "sec.\n";
 	//if no new photos need to do clustering
 	if (photos.size() == 0){
 		return 0;
 	}
 	t1 = clock();
-//	PreSegment preseg(photos);
-//	preseg.GetBoundaries();
-//	for (size_t i = 0; i < preseg.coEventIdx.size(); i++){
-//		vector<Photo_Feature_Set> tmpPhotos;
-//		for (size_t p = 0; p < preseg.coEventIdx[i].size(); p++){
-//			tmpPhotos.push_back(photos[preseg.coEventIdx[i][p]]);
-//		}
-//		CCluster cluster(tmpPhotos);
-//		cluster.Clustering(inConfig.use_gps);
-//		//if all images in subevent is in a groundtruth event
-//		//	cluster.PrintGroundTruth();
-//		vector<vector<int>> eventIdx;
-//		cluster.GetEventIndex(eventIdx);
-//		//merge new clustered photos into oldPhotos and oldEventIdx
-//		cluster.MergeTwoSegSet(oldPhotos, oldEventIdx, tmpPhotos, eventIdx);
-//	}
-//	//merge is a global behavior
-//	CCluster gCluster(oldPhotos);
-//	gCluster.MergeEvents2Scale(oldEventIdx, inConfig.threshold, inConfig.timeK, inConfig.gpsK);
-//	gCluster.GetEventIndex(oldEventIdx);
-//	cout << "With " << oldEventIdx.size() << " events in final segmentation.\n";
+	CCluster cluster(photos);
+	cluster.Clustering(inConfig.use_gps);
+	cluster.GetEventIndex(eventIdx);
+	//merge is a global behavior
+	cluster.MergeEvents2Scale(eventIdx, inConfig.threshold, inConfig.timeK, inConfig.gpsK);
+	cluster.GetEventIndex(eventIdx);
 
-//	t2 = clock();
-//	ins << "Segmentation time: " << double(t2 - t1) / CLOCKS_PER_SEC << "sec.\n";
-//	ins << "number of photos: " << oldPhotos.size() << ".\n";
-//	ins << "number of events: " << oldEventIdx.size() << ".\n";
-//	CCluster cluster(photos);
-//	cluster.Clustering(inConfig.use_gps);
-	//if all images in subevent is in a groundtruth event
-//	cluster.PrintGroundTruth();
-//	vector<vector<int>> eventIdx;
-//	cluster.GetEventIndex(eventIdx);
-//	Performance perf = cluster.GetPerformance(eventIdx, inConfig.threshold, inConfig.timeK, inConfig.gpsK);
-//	cout << "Pre: " << perf.precision << " rec: " << perf.recall << " Fscore: " << perf.FScore << "\n";
-//	cout << "Merge sub events to final events...\n";
-//	cluster.MergeEvents2Scale(eventIdx, inConfig.threshold, inConfig.timeK, inConfig.gpsK);
-//	cluster.GetEventIndex(eventIdx);
-//	cout << "With " << eventIdx.size() << " events in final segmentation.\n";
-	//merge new and old into new
-//	cluster.MergeTwoSegSet(photos, eventIdx, oldPhotos, oldEventIdx);
-//	if (inConfig.eventFileTxt.size() > 0){
-//		cluster.ExportEventInfo2Txt(inConfig.eventFileTxt);
-//	}
-//	string outImageFolder(inConfig.tszOutImageDir.begin(), inConfig.tszOutImageDir.end());
-//	string subEventFolder = outImageFolder + "_subEvents";
-//	SaveImagesToFolder(photos, eventIdx, subEventFolder);
-//	cluster.GetPhotoFeatures(photos);
-//	cluster.GetEventIndex(eventIdx);
-//	cluster.ExportEventInfo("event_infos.xml");
-//	cluster.LoadEventInfo("event_infos.xml");
-
-	//save photo collection information to xml or txt
-	int pathLen = wcslen(inConfig.tszPhotoSegFile);
-	if (wcscmp(inConfig.tszPhotoSegFile + pathLen - 3, L"xml") == 0){
-		SavePhoto2EventAsXml(oldPhotos, inConfig.tszPhotoSegFile);
-	}
-	else{
-		SavePhoto2EventAsText(oldPhotos, inConfig.tszPhotoSegFile);
-	}
-	//save event information into xml file
-//	pathLen = wcslen(inConfig.tszEventSegFile);
-//	if (wcscmp(inConfig.tszEventSegFile + pathLen - 3, L"xml") == 0){
-//		SaveEvent2PhotosAsXml(oldEventIdx, oldPhotos, inConfig.tszEventSegFile);
+//	int pathLen = wcslen(inConfig.tszPhotoSegFile);
+//	if (wcscmp(inConfig.tszPhotoSegFile + pathLen - 3, L"xml") == 0){
+//		SavePhoto2EventAsXml(photos, inConfig.tszPhotoSegFile);
 //	}
 //	else{
-//		SaveEvent2PhotosAsText(oldEventIdx, oldPhotos, inConfig.tszEventSegFile);
+//		SavePhoto2EventAsText(photos, inConfig.tszPhotoSegFile);
 //	}
-//	//organize photos in specific folder by event id
-//	string outImageFolder(inConfig.tszOutImageDir.begin(), inConfig.tszOutImageDir.end());
-//	if (inConfig.tszOutImageDir.size() > 0){
-//		t1 = clock();
-//		cout << "Organize photos into result folder...\n";
-//		SaveImagesToFolder(oldPhotos, oldEventIdx, outImageFolder);
-//		t2 = clock();
-//		ins << "Copy photos time: " << double(t2 - t1) / CLOCKS_PER_SEC << "sec.\n";
+//	//save event information into xml file
+//	pathLen = wcslen(inConfig.tszEventSegFile);
+//	if (wcscmp(inConfig.tszEventSegFile + pathLen - 3, L"xml") == 0){
+//		SaveEvent2PhotosAsXml(eventIdx, photos, inConfig.tszEventSegFile);
+//	}
+//	else{
+//		SaveEvent2PhotosAsText(eventIdx, photos, inConfig.tszEventSegFile);
 //	}
 //	//Compute Performance
-//	EvaluateSegment evPerf(oldPhotos, oldEventIdx);
-//	evPerf.GetPerformance();
-//	Performance perf = evPerf.meanPerf;
-//	ins << "Precision: " << perf.precision << "\nRecall: " << perf.recall << "\nF-score: " << perf.FScore;
-//	ins.close();
+	EvaluateSegment evPerf(photos, eventIdx);
+	evPerf.GetPerformance();
+	Performance perf = evPerf.meanPerf;
+	ins << "Precision: " << perf.precision << "\nRecall: " << perf.recall << 
+		"\nF-score: " << perf.FScore << "\nAlbumItemCountSurplus: " << perf.AlbumCountSurplus;
+	ins.close();
 	return 0;
 }
 

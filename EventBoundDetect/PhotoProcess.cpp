@@ -313,9 +313,8 @@ bool CPhotoProcess::LoadPhotoFeat(wstring& photoPath, Photo_Feature_Set& PhotoFe
 int CPhotoProcess::ProcessPhotos(const TCHAR* m_UsrDir)
 {
 	// load all photos and their time-stamp information into m_vecPhotoLabel
-	int ErrCode = 0;
-	//int ErrCode = LoadPhotos(m_UsrDir); // always succeed!
-	ErrCode = GetReEventPhotos(m_UsrDir);
+	int ErrCode = LoadPhotos(m_UsrDir); // always succeed!
+	//ErrCode = GetReEventPhotos(m_UsrDir);
 	//sort photos by time
 	this->SortPhotos();
 	return ErrCode;

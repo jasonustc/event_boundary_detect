@@ -179,6 +179,7 @@ struct Performance{
 	float precision;
 	float recall;
 	float FScore;
+	float AlbumCountSurplus;
 	void ComputeFscore(){
 		FScore = 2 * precision * recall / (precision + recall + FLT_EPSILON);
 	}
@@ -207,6 +208,7 @@ private:
 	vector<Photo_Feature_Set> photos;
 	vector<int> eventPairIdx;
 	void GetGroundTrueEventIdx();
+	void GetGroundTrueEventIdx2();
 	void BuildConfMatrix();
 	void BuildEventPairs();
 	void ComputePerformance();

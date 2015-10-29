@@ -530,7 +530,7 @@ float EventInfo::CalcSimOf2Events(EventInfo& event1, EventInfo& event2, float ti
 	GlobalEventInfo& gEventInfo){
 	//the weight of 5 similarity views
 	//TODO: learn more resonable weights
-	vector<float> weight(7, 1.);
+	vector<float> weight(6, 1.);
 	InputWeightsFromTxt("weight.txt", weight, 7);
 	//the number of valid similarities
 	int numView = 0;
@@ -544,7 +544,7 @@ float EventInfo::CalcSimOf2Events(EventInfo& event1, EventInfo& event2, float ti
 	float distGPS = GPSInfo::Distof2GPS(event1.avgGps, event2.avgGps);
 	avgGpsSim = distGPS < 0 ? 0 : exp(- distGPS / (gpsK * gEventInfo.distGapAvg));
 	//tagging similarity
-	taggingSim = GetSimOfTwoVec(event1.taggingFeat, event2.taggingFeat);
+//	taggingSim = GetSimOfTwoVec(event1.taggingFeat, event2.taggingFeat);
 	//distance and speed similarity
 	spGPSSim = GetSimOfTwoVecNorm(event1.distFeat, event2.distFeat, gEventInfo.distFeatAvg, gEventInfo.distFeatVar);
 	spSpeedSim = GetSimOfTwoVecNorm(event1.speedFeat, event2.speedFeat, gEventInfo.speedFeatAvg, gEventInfo.speedFeatVar);
@@ -556,8 +556,8 @@ float EventInfo::CalcSimOf2Events(EventInfo& event1, EventInfo& event2, float ti
 	decScores.push_back(spGPSSim);
 	decScores.push_back(spSpeedSim);
 	decScores.push_back(spBvSim);
-	decScores.push_back(taggingSim);
-	ofstream ofv("tagging_sim.txt", ios::app);
+//	decScores.push_back(taggingSim);
+//	ofstream ofv("tagging_sim.txt", ios::app);
 //	ofv << "tagging vector 1:\n";
 //	for (size_t i = 0; i < event1.taggingFeat.size(); i++){
 //		ofv << event1.taggingFeat[i] << " ";
@@ -566,8 +566,8 @@ float EventInfo::CalcSimOf2Events(EventInfo& event1, EventInfo& event2, float ti
 //	for (size_t i = 0; i < event2.taggingFeat.size(); i++){
 //		ofv << event2.taggingFeat[i] << " ";
 //	}
-	ofv << "sim: " << taggingSim << "\n";
-	ofv.close();
+//	ofv << "sim: " << taggingSim << "\n";
+//	ofv.close();
 	//we only consider the similarity that exceed given threshold
 	float finalScore = FusionMultiviewDecision(decScores, threSim, weight);
 //	cout << avgTimeSim << " " << spTimeSim << " " << avgGpsSim << " " << spGPSSim <<
@@ -861,7 +861,7 @@ void EventInfo::ComputeEventFeat(vector<Photo_Feature_Set>& photos){
 		bvFeat.push_back(avgBvVal);
 		bvFeat.push_back(varBvVal);
 	}
-	ComputeTaggingFeat(photos);
+//	ComputeTaggingFeat(photos);
 }
 
 bool EventInfo::LoadFeatInTxt(const string& path, vector<float>& vec){

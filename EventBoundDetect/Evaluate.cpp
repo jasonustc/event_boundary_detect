@@ -22,6 +22,39 @@ void EvaluateSegment::GetGroundTrueEventIdx(){
 		}
 	}
 }
+
+void GetEventFolderName(const string& path, string& folder){
+	int loc1 = path.find("\\");
+	int loc2 = path.find("\\", loc1 + 1);
+	if (loc2 == path.size() || loc2 - loc1 < 2){
+		printf("error when extract folder name of '%s'\n", path.c_str());
+	}
+	folder = path.substr(loc1 + 1, loc2 - loc1 - 1);
+}
+
+void EvaluateSegment::GetGroundTrueEventIdx2(){
+	//already have groundtruth event index
+	if (trueEventIndex.size() > 0){
+		return;
+	}
+	vector<string> folders;
+	for (size_t i = 0; i < photos.size(); i++){
+		string folder, file;
+		GetEventFolderName(photos[i].tszFileName, folder);
+		//new groundtruth event
+		int e = std::find(folders.begin(), folders.end(), folder) - folders.begin();
+		if ( e == folders.size()){
+			vector<int> eventIdx;
+			eventIdx.push_back(i);
+			trueEventIndex.push_back(eventIdx);
+			folders.push_back(folder);
+			cout << folder << "\n";
+		}
+		else{
+			trueEventIndex[e].push_back(i);
+		}
+	}
+}
 //return the median value in vector
 double GetMedianOfVec(vector<double> data){
 	if (data.size() == 0){
@@ -77,11 +110,13 @@ void EvaluateSegment::BuildConfMatrix(){
 
 void EvaluateSegment::BuildEventPairs(){
 	if (confMatrix.size() != predEventIndex.size()){
+		printf("confmatrix and predEvnet index size not match\n");
 		return;
 	}
 	eventPairIdx.clear();
 	//predicted to true
 	for (size_t i = 0; i < confMatrix.size(); i++){
+		//pred -> true
 		int loc = std::min_element(confMatrix[i].begin(), confMatrix[i].end()) - confMatrix[i].begin();
 		eventPairIdx.push_back(loc);
 	}
@@ -90,6 +125,7 @@ void EvaluateSegment::BuildEventPairs(){
 Performance EvaluateSegment::GetAlbumPerf(vector<int>& predIdx, vector<int>& trueIdx){
 	int TP(0), FP(0), FN(0);
 	if (predIdx.size() == 0 || trueIdx.size() == 0){
+		printf("empty predIdx or trueIdx\n");
 		Performance perf;
 		perf.precision = 0;
 		perf.recall = 0;
@@ -109,6 +145,10 @@ Performance EvaluateSegment::GetAlbumPerf(vector<int>& predIdx, vector<int>& tru
 	perf.precision = float(TP) / float(TP + FP);
 	perf.recall = float(TP) / float(TP + FN);
 	perf.ComputeFscore();
+//	perf.AlbumCountSurplus = (double)(predIdx.size() - trueIdx.size()) / (double)(trueIdx.size());
+	perf.AlbumCountSurplus = 1 - (float)predIdx.size() / (float)(trueIdx.size());
+	cout << predIdx.size() << "\t" << trueIdx.size() << "\t"
+		<< 1 - (float)predIdx.size() / (float)(trueIdx.size()) << "\n";
 	return perf;
 }
 
@@ -116,21 +156,24 @@ void EvaluateSegment::ComputePerformance(){
 	if (eventPairIdx.size() == 0){
 		return;
 	}
-	float avgPrecision(0), avgRecall(0), avgFscore(0);
+	float avgPrecision(0), avgRecall(0), avgFscore(0), avgAlbumCountSurplus(0);
 	for (size_t i = 0; i < eventPairIdx.size(); i++){
 		Performance perf = GetAlbumPerf(predEventIndex[i], trueEventIndex[eventPairIdx[i]] );
 		pairPerf.push_back(perf);
 		avgPrecision += perf.precision;
 		avgRecall += perf.recall;
 		avgFscore += perf.FScore;
+		avgAlbumCountSurplus += perf.AlbumCountSurplus;
 	}
 	meanPerf.precision = avgPrecision / eventPairIdx.size();
 	meanPerf.recall = avgRecall / eventPairIdx.size();
 	meanPerf.FScore = avgFscore / eventPairIdx.size();
+	meanPerf.AlbumCountSurplus = avgAlbumCountSurplus / eventPairIdx.size();
 }
 
 void EvaluateSegment::GetPerformance(){
-	GetGroundTrueEventIdx();
+//	GetGroundTrueEventIdx();
+	GetGroundTrueEventIdx2();
 	BuildConfMatrix();
 	BuildEventPairs();
 	ComputePerformance();
