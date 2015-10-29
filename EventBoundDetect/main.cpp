@@ -25,7 +25,6 @@ int _tmain(int argc, TCHAR** argv)
 	}
 
 	//parse parameters
-	clock_t t1, t2;
 	InputConfig inConfig;
 	inConfig.tszImageDir = argv[1];
 	std::replace(inConfig.tszImageDir.begin(), inConfig.tszImageDir.end(), '/', '\\');
@@ -36,14 +35,11 @@ int _tmain(int argc, TCHAR** argv)
 
 	//extract features
 	vector<Photo_Feature_Set> photos;
-	t1 = clock();
 	HRESULT hr = S_OK;
 	CPhotoProcess photoProcess;
-	hr = photoProcess.ProcessPhotos(inConfig.tszImageDir.c_str());
+	LoadPhotoFromXml(inConfig.photoFeatFile, photos);
+	hr = photoProcess.ProcessPhotos(inConfig.tszImageDir.c_str(), inConfig.tszPhotoSegFile);
 	photoProcess.GetPhotoFeats(photos);
-	t2 = clock();
-	//if no new photos need to do clustering
-	t1 = clock();
 
 	//save photo collection information to xml or txt
 	int pathLen = wcslen(inConfig.tszPhotoSegFile);

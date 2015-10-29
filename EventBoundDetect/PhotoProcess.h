@@ -36,7 +36,7 @@ struct PhotoExifInfo{
 		}
 		float apertValue = log2f(Fnumber * Fnumber);
 		float timeValue = -log2f(ExpoTime);
-		float speedValue = log2f(ISOsr / 3.125);
+		double speedValue = log2f(ISOsr / 3.125);
 		return apertValue + timeValue - speedValue;
 	}
 
@@ -50,30 +50,20 @@ public:
 	CPhotoProcess();
 	CPhotoProcess(TCHAR* SourceDir,TCHAR* OutputDir,string &segmentPhotoDir);
 	~CPhotoProcess();
-	int ProcessPhotos(const TCHAR* imgDir);
+	int ProcessPhotos(const TCHAR* imgDir, const TCHAR* outFilePath);
     void GetPhotoFeats(vector<Photo_Feature_Set> &photoFeats);
-	void GetOldPhotoFeats(vector<Photo_Feature_Set>& oldPhotos){ oldPhotos = vecOldPhotos; }
-	void GetOldEventIdx(vector<vector<int>>& oldEventIdx){ oldEventIdx = vecOldEventIdx; }
 
 protected:
 	void SortPhotos();
-	HRESULT LoadPhotos(const TCHAR* imgDir);
-	HRESULT GetTimeStampFromSinglePhoto(const string& imgPath, SYSTEMTIME& sysTime,
-	double& longtitude, double& latitude, double& altitude);
+	HRESULT LoadPhotos(const TCHAR* imgDir, const TCHAR* outFilePath);
 	HRESULT GetTimeStampFromSinglePhoto(const string& imgPath, SYSTEMTIME& sysTime, 
 		PhotoExifInfo& photoExifInfo);
 	double GetSecondTime(IN SYSTEMTIME SysTime);
-	HRESULT ProcessSortedPhotos(int bestPhotoNum);
-	//get the photos that need to be reclustered
-	bool GetReEventPhotos(const TCHAR* m_UsrDir);
 	bool LoadPhotoFeat(wstring& photoPath, Photo_Feature_Set& PhotoFeat);
 
 private:
 	//photos need to be clustered
 	vector<Photo_Feature_Set> m_vecPhotos;
-	//photos that are already clustered
-	vector<Photo_Feature_Set> vecOldPhotos;
-	vector<vector<int>> vecOldEventIdx;
 
 	int m_iPhotoNum; 
 	int m_iEventNum;

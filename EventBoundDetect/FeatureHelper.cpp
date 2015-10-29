@@ -42,7 +42,7 @@ float GetSimOfTwoVec2(vector<float>& feat1, vector<float>& feat2){
 		return 0;
 	}
 	float coSum(0), sum1(0), sum2(0);
-	for (int i = 0; i < feat1.size(); i++){
+	for (size_t i = 0; i < feat1.size(); i++){
 		coSum += (feat1[i] - feat2[i]) * (feat1[i] - feat2[i]);
 		sum1 += feat1[i] * feat1[i];
 		sum2 += feat2[i] * feat2[i];
@@ -92,8 +92,8 @@ void SaveImagesToFolder(const vector<Photo_Feature_Set>& photos,
 	ostringstream os;
 #pragma omp parallel for 
 	{
-		int i = 0;
-		int j = 0;
+		size_t i = 0;
+		size_t j = 0;
 		for (i = 0; i < images.size(); i++){
 			os.str("");
 			vector<int> eventImgs = images[i];
@@ -363,6 +363,8 @@ bool SavePhoto2EventAsXml(const vector<Photo_Feature_Set> &photos, const TCHAR* 
 		photo_node.append_child("latitude").text().set(photos[i].latitude);
 		photo_node.append_child("attitude").text().set(photos[i].atitude);
 		photo_node.append_child("brightValue").text().set(photos[i].brightValue);
+		photo_node.append_child("representativeness").text().set(photos[i].fRep);
+		photo_node.append_child("quality").text().set(photos[i].pflQuality);
 	}
 
 	if (!doc.save_file(outFilePath)){

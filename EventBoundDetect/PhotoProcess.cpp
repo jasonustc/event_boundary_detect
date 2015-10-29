@@ -1,6 +1,9 @@
 #include "stdafx.h"
 #include "PhotoProcess.h"
 #include "exif.h"
+#include "3rdparty\pugixml.hpp"
+#include "FeatureHelper.h"
+#include <algorithm>
 
 CPhotoProcess::CPhotoProcess()
 {
@@ -22,86 +25,6 @@ void CPhotoProcess::SortPhotos(){
 	std::sort(m_vecPhotos.begin(), m_vecPhotos.end(), timeComperer());
 }
 
-/*********************************************************************************************\
-GetTimeStamp
-
-[IN]  szFileName - photo file name
-[OUT] SysTime - system time: timestamp or photo creation time
-\*********************************************************************************************/
-HRESULT CPhotoProcess::GetTimeStampFromSinglePhoto(const string& imgPath, SYSTEMTIME& sysTime,
-	double& longtitude, double& latitude, double& altitude)
-{
-	HRESULT hr = S_OK;
-	//time stamp
-	FILE *fp;
-	fopen_s(&fp, imgPath.c_str(), "rb");
-	if (!fp){
-		std::printf("Can't open file %s.\n", imgPath.c_str());
-		return E_FAIL;
-	}
-	//sets the position indicator with the stream to a new position
-	fseek(fp, 0, SEEK_END);
-	//ftell: get current position in stream
-	unsigned long fsize = ftell(fp);
-	//set position of the stream to the beginning
-	rewind(fp);
-	unsigned char *buf = new unsigned char[fsize];
-	//read 1*fsize data from fp into buf
-	if (fread(buf, 1, fsize, fp) != fsize){
-		std::printf("can't read file %s", imgPath.c_str());
-		return E_FAIL;
-		delete[] buf;
-	}
-	fclose(fp);
-	//parse EXIF
-	EXIFInfo photoExif;
-	TCHAR tszFileName[MAX_PATH];
-	int errorCode = photoExif.parseFrom(buf, fsize);
-	delete[] buf;
-	if (errorCode){
-		std::printf("Error parsing EXIF of %s, code %d, use created time instead.\n",
-			imgPath.c_str(), errorCode);
-		// here how to set a default value of photo's time?
-		CPVImageInfo PhotoInfo;
-		size_t numBytes;
-		//from string to TCHAR*
-		mbstowcs_s(&numBytes,tszFileName,MAX_PATH,imgPath.c_str(),imgPath.length());
-		hr = PhotoInfo.SetImageFile(tszFileName);
-
-		if (SUCCEEDED(hr))
-		{
-			hr = PhotoInfo.GetDTOrig(&sysTime);  // always succeed!
-		}
-		latitude = 0;
-		longtitude = 0;
-		altitude = 0;
-		return S_OK;
-		//return ERROR_PARSING_EXIF;
-	}
-	else{
-		wchar_t timeBuf[128];
-		mbstowcs(timeBuf, photoExif.DateTimeOriginal.c_str(), 128);
-		CPVImageInfo::ExifDTToDateTime(timeBuf, &sysTime);
-		//latitude
-		latitude = photoExif.GeoLocation.Latitude;
-		//longitude
-		longtitude = photoExif.GeoLocation.Longitude;
-		//altitude
-		altitude = photoExif.GeoLocation.Altitude;
-	}
-	/*
-	CPVImageInfo PhotoInfo;
-
-	hr = PhotoInfo.SetImageFile(szFileName);
-
-	if (SUCCEEDED(hr))
-	{
-	hr = PhotoInfo.GetDTOrig(&SysTime);  // always succeed!
-	}
-	*/
-//	delete tszFileName;
-	return hr;
-}
 
 /*********************************************************************************************\
 GetTimeStamp
@@ -135,40 +58,42 @@ HRESULT CPhotoProcess::GetTimeStampFromSinglePhoto(const string& imgPath, SYSTEM
 	fclose(fp);
 	//parse EXIF
 	EXIFInfo photoExif;
-	TCHAR tszFileName[MAX_PATH];
 	int errorCode = photoExif.parseFrom(buf, fsize);
 	delete[] buf;
 	if (errorCode){
 		std::printf("Error parsing EXIF of %s, code %d, use created time instead.\n",
 			imgPath.c_str(), errorCode);
-		// here how to set a default value of photo's time?
 		CPVImageInfo PhotoInfo;
-		size_t numBytes;
 		//from string to TCHAR*
-		mbstowcs_s(&numBytes, tszFileName, MAX_PATH, imgPath.c_str(), imgPath.length());
+		TCHAR tszFileName[MAX_PATH];
+		LONG len = MultiByteToWideChar(CP_ACP, 0, imgPath.c_str(), -1, NULL, 0);
+		MultiByteToWideChar(CP_ACP, 0, imgPath.c_str(), -1, tszFileName, len + 1);//////////////////////////////
+
 		hr = PhotoInfo.SetImageFile(tszFileName);
 
-		if (SUCCEEDED(hr))
-		{
+		if (SUCCEEDED(hr)){
 			hr = PhotoInfo.GetDTOrig(&sysTime);  // always succeed!
+		}
+		else{
+			cout << "set image file name failed. " << tszFileName << "\n";
 		}
 		return S_OK;
 		//return ERROR_PARSING_EXIF;
 	}
 	else{
-//		wchar_t timeBuf[128];
-//		mbstowcs(timeBuf, photoExif.DateTimeOriginal.c_str(), 128);
-//		CPVImageInfo::ExifDTToDateTime(timeBuf, &sysTime);
 		//always use CPVImageInfo to extract time feature
 		CPVImageInfo PhotoInfo;
-		size_t numBytes;
 		//from string to TCHAR*
-		mbstowcs_s(&numBytes, tszFileName, MAX_PATH, imgPath.c_str(), imgPath.length());
+		TCHAR tszFileName[MAX_PATH];
+		LONG len = MultiByteToWideChar(CP_ACP, 0, imgPath.c_str(), -1, NULL, 0);
+		MultiByteToWideChar(CP_ACP, 0, imgPath.c_str(), -1, tszFileName, len + 1);//////////////////////////////
 		hr = PhotoInfo.SetImageFile(tszFileName);
 
-		if (SUCCEEDED(hr))
-		{
+		if (SUCCEEDED(hr)){
 			hr = PhotoInfo.GetDTOrig(&sysTime);  // always succeed!
+		}
+		else{
+			cout << "set image file name failed. " << tszFileName << "\n";
 		}
 		//latitude
 		photoExifInfo.latitude = photoExif.GeoLocation.Latitude;
@@ -247,13 +172,18 @@ LoadPhotos
 [IN]  m_szUsrDir - the directory containing all the photos of a user
 [OUT] m_vecPhotos - the unsorted vector containing the meta data of all photos
 \*********************************************************************************************/
-HRESULT CompGPSInfo(vector<Photo_Feature_Set> &photos);
-HRESULT CPhotoProcess::LoadPhotos(const TCHAR* m_tszUsrDir)
+HRESULT CPhotoProcess::LoadPhotos(const TCHAR* m_tszUsrDir, const TCHAR* outFilePath)
 {
 	HRESULT hr = S_OK;
 	int iFileNum = 0;
 	vector<wstring> m_vecPicFile;
-	hr = GetImageFilesInDir(m_tszUsrDir, m_vecPicFile);
+	try{
+		hr = GetImageFilesInDir(m_tszUsrDir, m_vecPicFile);
+	}
+	catch (int& code){
+		cout << "GetImageFilesInDir failsed, ERROR CODE: " << code << "\n";
+		return E_FAIL;
+	}
 	iFileNum = m_vecPicFile.size();
 	if (iFileNum == 0 || FAILED(hr))
 	{
@@ -264,10 +194,14 @@ HRESULT CPhotoProcess::LoadPhotos(const TCHAR* m_tszUsrDir)
 	for (int i = 0; i < iFileNum; i++)
 	{
 		Photo_Feature_Set photoFeat;
-		if (LoadPhotoFeat(m_vecPicFile[i], photoFeat)){
+		if (LoadPhotoFeat(m_vecPicFile[index], photoFeat)){
 			photoFeat.photoIndex = index;
 			this->m_vecPhotos.push_back(photoFeat);
 			index++;
+		}
+		else{
+			string picFile(m_vecPicFile[index].begin(), m_vecPicFile[index].end());
+			printf("Load feature of photo '%s' failed.", picFile.c_str());
 		}
 	}
 
@@ -283,12 +217,9 @@ HRESULT CPhotoProcess::LoadPhotos(const TCHAR* m_tszUsrDir)
 bool CPhotoProcess::LoadPhotoFeat(wstring& photoPath, Photo_Feature_Set& PhotoFeat){
 	SYSTEMTIME SysTime;
 	double dTime;
-	TCHAR tszFileName[MAX_PATH];
-	_stprintf_s(tszFileName, _T("%s"), photoPath.c_str());
-	char pFilePathName[MAX_PATH];
-	int nLen = wcslen(tszFileName) + 1;
-	WideCharToMultiByte(CP_ACP, 0, tszFileName, nLen, pFilePathName, 2 * nLen, NULL, NULL);
-	string imgPath = pFilePathName;
+	char imgPath[MAX_PATH];
+	LONG len = WideCharToMultiByte(CP_ACP, 0, photoPath.c_str(), -1, NULL, 0, NULL, NULL);
+	WideCharToMultiByte(CP_ACP, 0, photoPath.c_str(), -1, imgPath, len + 1, NULL, NULL);///////////////////
 	PhotoExifInfo pExifInfo;
 	HRESULT hResult = GetTimeStampFromSinglePhoto(imgPath, SysTime, pExifInfo);
 	if (SUCCEEDED(hResult))
@@ -297,7 +228,7 @@ bool CPhotoProcess::LoadPhotoFeat(wstring& photoPath, Photo_Feature_Set& PhotoFe
 		PhotoFeat.SysTime = SysTime;
 		dTime = GetSecondTime(SysTime);
 		PhotoFeat.dTimeStamp = dTime;
-		sprintf(PhotoFeat.tszFileName, pFilePathName);
+		sprintf_s(PhotoFeat.tszFileName, MAX_PATH,"%s", imgPath);
 		PhotoFeat.longitude = pExifInfo.longitude;
 		PhotoFeat.latitude = pExifInfo.latitude;
 		PhotoFeat.atitude = pExifInfo.altitude;
@@ -309,47 +240,11 @@ bool CPhotoProcess::LoadPhotoFeat(wstring& photoPath, Photo_Feature_Set& PhotoFe
 	return false;
 }
 
-int CPhotoProcess::ProcessPhotos(const TCHAR* m_UsrDir)
+int CPhotoProcess::ProcessPhotos(const TCHAR* m_UsrDir, const TCHAR* outFilePath)
 {
 	// load all photos and their time-stamp information into m_vecPhotoLabel
-	int ErrCode = LoadPhotos(m_UsrDir); // always succeed!
+	int ErrCode = LoadPhotos(m_UsrDir, outFilePath); // always succeed!
 	//sort photos by time
 	this->SortPhotos();
 	return ErrCode;
-}
-
-bool FindNearestNeigh(vector<Photo_Feature_Set> &photos,const float timestamp
-					  ,double &lat,double &lon, double &alt);
-//to complete the gps information of photos by their nearest neighbor in time
-HRESULT CompGPSInfo(vector<Photo_Feature_Set> &photos){
-	if ( photos.size()==0){
-		return E_FAIL;
-	}
-	for(unsigned int i=0;i<photos.size();i++){
-		Photo_Feature_Set photo=photos[i];
-		if (photo.latitude==0 && photo.latitude==0 && photo.atitude ==0){
-			FindNearestNeigh(photos,photo.dTimeStamp,photo.latitude,photo.longitude,photo.atitude);
-			photos[i].latitude=photo.latitude;
-			photos[i].longitude=photo.longitude;
-			photos[i].atitude=photo.atitude;
-		}
-	}
-	return S_OK;
-}
-
-//find the longtitude,latitude and atitude of the nearest photo in time
-bool FindNearestNeigh(vector<Photo_Feature_Set> &photos,const float timestamp
-					  ,double &lat,double &lon,double &alt){
-	float minTimeDiff=1e10;
-	for(unsigned int i=0;i<photos.size();i++){
-		Photo_Feature_Set photo=photos[i];
-		if(abs(photo.dTimeStamp-timestamp)<minTimeDiff && (photo.latitude!=0 
-			|| photo.longitude!=0 || photo.atitude !=0)){
-			minTimeDiff=abs(photo.dTimeStamp-timestamp);
-			lat=photo.latitude;
-			lon=photo.longitude;
-			alt=photo.atitude;
-		}
-	}
-	return true;
 }
