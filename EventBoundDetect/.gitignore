@@ -10,5 +10,7 @@ Release/
 *.dll
 *.txt
 
+*.suo
+
 
 
