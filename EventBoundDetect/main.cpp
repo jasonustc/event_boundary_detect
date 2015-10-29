@@ -50,7 +50,7 @@ int _tmain(int argc, TCHAR** argv)
 		wstring tUserName(userXmlFile.begin(), userXmlFile.end());
 		int n = CountNumEvents(splitUsers[i]);
 		SavePhoto2EventAsXml(splitUsers[i], tUserName.c_str());
-		out_info << "username: " << userNames[i] << " numPhotos: " << splitUsers.size()
+		out_info << "username: " << userNames[i] << " numPhotos: " << splitUsers[i].size()
 			<< " numEvents: " << n << "\n";
 	}
 	out_info.close();
