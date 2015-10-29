@@ -24,16 +24,25 @@ HRESULT GetSubFolders(const WCHAR *wzDir, std::vector<std::wstring> &vSubFolders
 
 HRESULT GetAllLeafSubFolders_FullPath(WCHAR *wzDir, std::vector<std::wstring> &vSubFoldersLeaf);
 
+//HRESULT GetAllImageFilesInSubfolders(
+//	__in const WCHAR *wzDir,
+//	__out std::vector<std::wstring> &vAllFiles,
+//	__in bool bTestReadable = true);
+
 HRESULT GetAllImageFilesInSubfolders(
 	__in const WCHAR *wzDir,
-	__out std::vector<std::wstring> &vAllFiles,
-	__in bool bTestReadable = true);
+	__out std::vector<std::wstring> &vAllFiles);
+
+//HRESULT GetAllFilesFromListFile(
+//	__in const WCHAR *wzFileList,
+//	__in const WCHAR *wzRoot,
+//	__out std::vector<std::wstring> &vAllFiles,
+//	__in bool bTestReadable = true);
 
 HRESULT GetAllFilesFromListFile(
 	__in const WCHAR *wzFileList,
 	__in const WCHAR *wzRoot,
-	__out std::vector<std::wstring> &vAllFiles,
-	__in bool bTestReadable = true);
+	__out std::vector<std::wstring> &vAllFiles);
 
 HRESULT DeleteAllFilesInFolder(WCHAR *wzDir);
 

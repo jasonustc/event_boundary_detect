@@ -26,13 +26,11 @@ int _tmain(int argc, TCHAR** argv)
 	}
 
 	//parse parameters
+	ofstream out_info("info.txt");
 	clock_t t1, t2;
 	InputConfig inConfig;
 	TcharToString(argv[1], inConfig.photoFeatFile);
 	std::replace(inConfig.photoFeatFile.begin(), inConfig.photoFeatFile.end(), '/', '\\');
-	if (inConfig.photoFeatFile.back() != '\\'){
-		inConfig.photoFeatFile.append("\\");
-	} 
 
 	//Load photo features and split into different users
 	vector<Photo_Feature_Set> photos;
@@ -40,16 +38,22 @@ int _tmain(int argc, TCHAR** argv)
 	if (inConfig.photoFeatFile.size() > 0){
 		LoadPhotoFromXml(inConfig.photoFeatFile, photos);
 	}
+	vector<vector<Photo_Feature_Set>> splitUsers;
+	vector<string> userNames;
+	SplitPhotoToDifferentUsers(photos, splitUsers, userNames);
 	t1 = clock();
 
 	//save photo collection information to xml or txt
 	int pathLen = wcslen(inConfig.tszPhotoSegFile);
-	if (wcscmp(inConfig.tszPhotoSegFile + pathLen - 3, L"xml") == 0){
-		SavePhoto2EventAsXml(photos, inConfig.tszPhotoSegFile);
+	for (size_t i = 0; i < userNames.size(); i++){
+		string userXmlFile = userNames[i] + ".xml";
+		wstring tUserName(userXmlFile.begin(), userXmlFile.end());
+		int n = CountNumEvents(splitUsers[i]);
+		SavePhoto2EventAsXml(splitUsers[i], tUserName.c_str());
+		out_info << "username: " << userNames[i] << " numPhotos: " << splitUsers.size()
+			<< " numEvents: " << n << "\n";
 	}
-	else{
-		SavePhoto2EventAsText(photos, inConfig.tszPhotoSegFile);
-	}
+	out_info.close();
 	return 0;
 }
 

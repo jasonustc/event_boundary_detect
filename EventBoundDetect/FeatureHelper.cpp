@@ -282,6 +282,75 @@ int LoadPhotoFromTxtFolder(string& folderPath, vector<Photo_Feature_Set>& photos
 }
 
 
+void RemoveSubString(string& str, const string& subStr){
+	std::string::size_type i = str.find(subStr);
+	if (i != std::string::npos){
+		//+1: remove the \\ too
+		str.erase(i, subStr.length() + 1);
+	}
+}
+
+int CountSubString(const string& str, const string& subStr){
+	std::string::size_type pos = 0;
+	int n = 0;
+	while ((pos = str.find(subStr, pos)) != std::string::npos){
+		n++;
+		pos += subStr.size();
+	}
+	return n;
+}
+
+int CountNumEvents(vector<Photo_Feature_Set>& userPhotos){
+	vector<string> folderNames;
+	for (size_t i = 0; i < userPhotos.size(); i++){
+		string photoPath = userPhotos[i].tszFileName;
+		int loc1 = photoPath.find("\\");
+		int loc2 = photoPath.find("\\", loc1);
+		if (loc2 == photoPath.length()){
+			printf("no sub folder in '%s'\n", photoPath.c_str());
+			continue;
+		}
+		string folder = photoPath.substr(loc1, loc2);
+		if (std::find(folderNames.begin(), folderNames.end(), folder) == folderNames.end()){
+			folderNames.push_back(folder);
+			printf("new folder: %s", folder.c_str());
+		}
+	}
+	return folderNames.size();
+}
+
+int SplitPhotoToDifferentUsers(vector<Photo_Feature_Set>& photos, 
+	vector<vector<Photo_Feature_Set>>& splitPhotos, vector<string>& userNames){
+	splitPhotos.clear();
+	userNames.clear();
+	int n = 0;
+	for (size_t p = 0; p < photos.size(); p++){
+		string photo = photos[p].tszFileName;
+		RemoveSubString(photo, "S:\\AlbumGroupings\\AnnotatedData");
+		cout << photo << "\n";
+		string userName = photo.substr(0, photo.find("\\"));
+		int loc = std::find(userNames.begin(), userNames.end(), userName) - userNames.begin();
+		if (loc == userNames.size()){
+			//not in current user list
+			//add a new user
+			//if not in a subfolder, it is not in any event
+			//currently, we ignore it
+			if (CountSubString(photo, "\\") < 2){ continue; }
+			userNames.push_back(userName);
+			vector<Photo_Feature_Set> newUser;
+			newUser.push_back(photos[p]);
+			splitPhotos.push_back(newUser);
+			printf("Add a new user '%s' to user list\n", userName.c_str());
+		}
+		else{
+			if (CountSubString(photo, "\\") < 2){ continue; }
+			splitPhotos[loc].push_back(photos[p]);
+		}
+	}
+	printf("Totally processed %d users, %d photos\n", userNames.size(), photos.size());
+	return 0;
+}
+
 string SysTime2String(const SYSTEMTIME & sysTime){
 	ostringstream oss;
 	oss << sysTime.wYear

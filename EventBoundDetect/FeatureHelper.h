@@ -3,10 +3,10 @@
 
 #include "stdafx.h"
 #include "PhotoInfo.h"
-#include "PhotoProcess.h"
 #include <vector>
 #include <algorithm> //std::replace
 #include <functional> //std::vector
+#include "FolderFileHelper.h"
 
 
 //input configurations structure
@@ -61,6 +61,11 @@ struct SimpleEventInfo{
 	vector<int> photoIdx;
 };
 
+void RemoveSubString(string& str, const string& subStr);
+int CountNumEvents(vector<Photo_Feature_Set>& userPhotos);
+int CountSubString(const string& str, const string& subStr);
+int SplitPhotoToDifferentUsers(vector<Photo_Feature_Set>& photos,
+	vector<vector<Photo_Feature_Set>>& splitPhotos, vector<string>& userNames);
 vector<string> split(const string& s, char delim);
 int GetDayInfoInCollection(vector<Photo_Feature_Set>& photos);
 bool SaveEvent2PhotosAsXml(const vector<vector<int>> eventIdx, const vector<Photo_Feature_Set> &photos, const TCHAR* outFilePath);
