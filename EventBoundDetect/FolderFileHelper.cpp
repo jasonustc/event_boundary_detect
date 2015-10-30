@@ -68,7 +68,12 @@ HRESULT GetImageFilesInDir(const WCHAR * wzPicDir, std::vector<wstring>& vecPicF
 	GetSubFolders(wzPicDir, subFolders);
 	for (unsigned int i = 0; i < subFolders.size(); i++){
 		wstring fullPath(wzPicDir);
-		fullPath = fullPath + subFolders[i];
+		if (fullPath.back() != '\\'){
+			fullPath = fullPath + L"\\" + subFolders[i];
+		}
+		else{
+			fullPath = fullPath + subFolders[i];
+		}
 		GetImageFilesInDir(fullPath.c_str(), vecPicFile);
 	}
 //	vecPicFile.clear();
