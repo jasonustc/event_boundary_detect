@@ -99,6 +99,7 @@
     <ClCompile Include="PhotoProcess.cpp" />
     <ClCompile Include="PreSegment.cpp" />
     <ClCompile Include="PVImageInfo.cpp" />
+    <ClCompile Include="PostSegCheck.cpp" />
     <ClCompile Include="stdafx.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -112,6 +113,7 @@
     <ClInclude Include="PhotoProcess.h" />
     <ClInclude Include="PreSegment.h" />
     <ClInclude Include="PVImageInfo.h" />
+    <ClInclude Include="PostSegCheck.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="StringHelper.h" />
     <ClInclude Include="targetver.h" />
