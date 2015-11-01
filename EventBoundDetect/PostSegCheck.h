@@ -14,7 +14,13 @@ public:
 		}
 		this->eventIdx_ = eventIdx;
 		this->photos_ = photos;
-		eventInd_.resize(eventIdx.size(), 0);
+		eventInd_.resize(eventIdx.size(), -1);
+	}
+
+	void FinalCheck(){
+		EventNumCheck();
+		TimeLocationCheck();
+		GetFinalCheckResult();
 	}
 
 	vector<Photo_Feature_Set>& GetPhotos(){ return this->photos_; }
@@ -27,11 +33,13 @@ private:
 
 	void GenFinalEvents();
 
+	void GetFinalCheckResult();
+
 	vector<Photo_Feature_Set> photos_;
 	vector<vector<int>> eventIdx_;
 
 	//to indicate if this is a final event
-	//-1: not an event, 0: is an event >0: should merge event with this id
+	//-2: not an event, -1: is an event >=0: should merge event with this id
 	vector<int> eventInd_; 
 
 	int minPhotoNumInEvent_ = 14; // default as at least 14 photos

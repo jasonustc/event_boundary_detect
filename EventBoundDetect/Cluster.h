@@ -257,7 +257,7 @@ public:
 private:
 	HRESULT Preprocess();
 	HRESULT PreprocessNew();
-    double GetSecondTime(IN SYSTEMTIME SysTime);
+    static double GetSecondTime(IN SYSTEMTIME SysTime);
     HRESULT BuildIndex();
 	HRESULT MergeEvent();
     void SortPhotos();
