@@ -285,7 +285,7 @@ HRESULT CCluster::EMtraining(Mat & Samples, bool use_gps){
 		}
 		m_flPrevCost_MDL = m_flCurrCost_MDL;
 	}
-	printf_s("Event iteration finish\n");
+//	printf_s("Event iteration finish\n");
 	printf_s("with %d sub-events in the final model.\n",m_iBestK_MDL);
 	return S_OK;
 }

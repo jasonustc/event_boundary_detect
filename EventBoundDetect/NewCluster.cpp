@@ -221,7 +221,7 @@ void CCluster::ComputeGlobalEventInfo(){
 	//only consider event in n month
 	//window size: 1 month
 	//TODO: tune this parameter
-	float windowTime = 1 * 30 * 24 * 60;
+	float windowTime = 1 * 10 * 24 * 60;
 	int numInfos = 0, numTimes = 0, numDists = 0, numBvs = 0,
 		numGpsGaps = 0, numSpeeds = 0;
 	for (size_t i = 0; i < eventInfos.size(); i++){
@@ -246,6 +246,7 @@ void CCluster::ComputeGlobalEventInfo(){
 		if (i == 0){
 			continue;
 		}
+//		cout << eventInfos[i].avgTime - eventInfos[i - 1].avgTime << "\t";
 		if (eventInfos[i].avgTime - eventInfos[i - 1].avgTime > windowTime){
 			continue;
 		}
@@ -531,7 +532,7 @@ float EventInfo::CalcSimOf2Events(EventInfo& event1, EventInfo& event2, float ti
 	//the weight of 5 similarity views
 	//TODO: learn more resonable weights
 	vector<float> weight(6, 1.);
-	InputWeightsFromTxt("weight.txt", weight, 7);
+	InputWeightsFromTxt("weight.txt", weight, 6);
 	//the number of valid similarities
 	int numView = 0;
 	float avgGpsSim(0), avgTimeSim(0), taggingSim(0);
@@ -543,8 +544,6 @@ float EventInfo::CalcSimOf2Events(EventInfo& event1, EventInfo& event2, float ti
 	//gps similarity
 	float distGPS = GPSInfo::Distof2GPS(event1.avgGps, event2.avgGps);
 	avgGpsSim = distGPS < 0 ? 0 : exp(- distGPS / (gpsK * gEventInfo.distGapAvg));
-	//tagging similarity
-//	taggingSim = GetSimOfTwoVec(event1.taggingFeat, event2.taggingFeat);
 	//distance and speed similarity
 	spGPSSim = GetSimOfTwoVecNorm(event1.distFeat, event2.distFeat, gEventInfo.distFeatAvg, gEventInfo.distFeatVar);
 	spSpeedSim = GetSimOfTwoVecNorm(event1.speedFeat, event2.speedFeat, gEventInfo.speedFeatAvg, gEventInfo.speedFeatVar);
@@ -556,18 +555,6 @@ float EventInfo::CalcSimOf2Events(EventInfo& event1, EventInfo& event2, float ti
 	decScores.push_back(spGPSSim);
 	decScores.push_back(spSpeedSim);
 	decScores.push_back(spBvSim);
-//	decScores.push_back(taggingSim);
-//	ofstream ofv("tagging_sim.txt", ios::app);
-//	ofv << "tagging vector 1:\n";
-//	for (size_t i = 0; i < event1.taggingFeat.size(); i++){
-//		ofv << event1.taggingFeat[i] << " ";
-//	}
-//	ofv << "\ntagging vector 2:\n";
-//	for (size_t i = 0; i < event2.taggingFeat.size(); i++){
-//		ofv << event2.taggingFeat[i] << " ";
-//	}
-//	ofv << "sim: " << taggingSim << "\n";
-//	ofv.close();
 	//we only consider the similarity that exceed given threshold
 	float finalScore = FusionMultiviewDecision(decScores, threSim, weight);
 //	cout << avgTimeSim << " " << spTimeSim << " " << avgGpsSim << " " << spGPSSim <<

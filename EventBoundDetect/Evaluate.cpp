@@ -27,7 +27,8 @@ void GetEventFolderName(const string& path, string& folder){
 	int loc1 = path.find("\\");
 	int loc2 = path.find("\\", loc1 + 1);
 	if (loc2 == path.size() || loc2 - loc1 < 2){
-		printf("error when extract folder name of '%s'\n", path.c_str());
+		folder = "";
+		return;
 	}
 	folder = path.substr(loc1 + 1, loc2 - loc1 - 1);
 }
@@ -41,6 +42,9 @@ void EvaluateSegment::GetGroundTrueEventIdx2(){
 	for (size_t i = 0; i < photos.size(); i++){
 		string folder, file;
 		GetEventFolderName(photos[i].tszFileName, folder);
+		if (folder.size() < 1){
+			continue;
+		}
 		//new groundtruth event
 		int e = std::find(folders.begin(), folders.end(), folder) - folders.begin();
 		if ( e == folders.size()){
@@ -145,10 +149,8 @@ Performance EvaluateSegment::GetAlbumPerf(vector<int>& predIdx, vector<int>& tru
 	perf.precision = float(TP) / float(TP + FP);
 	perf.recall = float(TP) / float(TP + FN);
 	perf.ComputeFscore();
-//	perf.AlbumCountSurplus = (double)(predIdx.size() - trueIdx.size()) / (double)(trueIdx.size());
-	perf.AlbumCountSurplus = 1 - (float)predIdx.size() / (float)(trueIdx.size());
 	cout << predIdx.size() << "\t" << trueIdx.size() << "\t"
-		<< 1 - (float)predIdx.size() / (float)(trueIdx.size()) << "\n";
+		<< perf.precision << "\t" << perf.recall << "\n";
 	return perf;
 }
 
@@ -168,7 +170,9 @@ void EvaluateSegment::ComputePerformance(){
 	meanPerf.precision = avgPrecision / eventPairIdx.size();
 	meanPerf.recall = avgRecall / eventPairIdx.size();
 	meanPerf.FScore = avgFscore / eventPairIdx.size();
-	meanPerf.AlbumCountSurplus = avgAlbumCountSurplus / eventPairIdx.size();
+	float true_size = trueEventIndex.size();
+	float pred_size = predEventIndex.size();
+	meanPerf.AlbumCountSurplus = (pred_size - true_size) / true_size;
 }
 
 void EvaluateSegment::GetPerformance(){

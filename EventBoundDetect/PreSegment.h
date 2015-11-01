@@ -22,7 +22,9 @@ private:
 	vector<Photo_Feature_Set> photos;
 	int d = 50;
 	int maxPhotoNum = 2000;//threshold of photo num, less than
-	int maxDayNum = 60;
+	//threshold of day num, if the time span of the dataset is more than
+	//30 days, we split it into two sub groups and cluter them independently
+	int maxDayNum = 30;
 	vector<int> boundIdx;
 
 public:

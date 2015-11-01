@@ -3,12 +3,14 @@
 using std::vector;
 using std::string;
 
+#define D2R (3.1415926 / 180)
+
 class PostSegCheck{
 
 public:
 
 	PostSegCheck(vector<Photo_Feature_Set>& photos, vector<vector<int>>& eventIdx){
-		if (photos.size() == 0 || eventIdx.size()){
+		if (photos.size() == 0 || eventIdx.size() == 0){
 			printf("empty photo data or event index data\n");
 			return;
 		}
@@ -43,9 +45,14 @@ private:
 	vector<int> eventInd_; 
 
 	int minPhotoNumInEvent_ = 14; // default as at least 14 photos
-	int maxEventTimeSpan_ = 50; //max time span when merge two sub events
-	int maxEventDistSpan_ = 125 * 1000;// max distance of photos in event
+	//50 minutes
+	//min time gap between two events
+	int minEventTimeGap_ = 50; 
+	//min distance gap between two events
+	//5000 meters
+	int minEventDistGap_ = 5 * 1000;
 
-	float TimeSim(Photo_Feature_Set& photo1, Photo_Feature_Set& photo2);
-	float LocSim(Photo_Feature_Set& photo1, Photo_Feature_Set& photo2);
+	double TimeSim(Photo_Feature_Set& photo1, Photo_Feature_Set& photo2);
+	double LocSim(Photo_Feature_Set& photo1, Photo_Feature_Set& photo2);
+	void InputGapInfo();
 };

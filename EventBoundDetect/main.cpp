@@ -12,11 +12,14 @@
 #include <direct.h>
 #include <fstream>
 #include "PreSegment.h"
+#include "PostSegCheck.h"
 
 using namespace std;
 
+//TODO: test the code of time and distance computation
 
 void ParseInputFlags(int argc, TCHAR** argv, InputConfig& inputConfig);
+void PrintEventInfo(vector<vector<int>>& eventIdx);
 int _tmain(int argc, TCHAR** argv)
 {
 	//default folder is the images folder in the same direcoty of the executable
@@ -72,35 +75,58 @@ int _tmain(int argc, TCHAR** argv)
 		return 0;
 	}
 	t1 = clock();
-	CCluster cluster(photos);
-	cluster.Clustering(inConfig.use_gps);
-	cluster.GetEventIndex(eventIdx);
+	//preprocess the collection to control the time span and photo number
+	PreSegment preseg(photos);
+	preseg.GetBoundaries();
+	vector<vector<int>> preSegEventIdx = preseg.coEventIdx;
+	printf("With %d events after Pre Segment.\n", preSegEventIdx.size());
+//	PrintEventInfo(preSegEventIdx);
+	vector<vector<int>> fEventIdx;
+	vector<Photo_Feature_Set> fPhotos;
+	for (size_t i = 0; i < preSegEventIdx.size(); i++){
+		vector<Photo_Feature_Set> tmpPhotos;
+		vector<vector<int>> tmpEventIdx;
+		for (size_t p = 0; p < preSegEventIdx[i].size(); p++){
+			tmpPhotos.push_back(photos[preSegEventIdx[i][p]]);
+		}
+		CCluster cluster(tmpPhotos);
+		cluster.Clustering(inConfig.use_gps);
+		cluster.GetEventIndex(tmpEventIdx);
+		//merge new clustered photos into final result
+		cluster.MergeTwoSegSet(fPhotos, fEventIdx, tmpPhotos, tmpEventIdx);
+	}
 	//merge is a global behavior
-	cluster.MergeEvents2Scale(eventIdx, inConfig.threshold, inConfig.timeK, inConfig.gpsK);
-	cluster.GetEventIndex(eventIdx);
+	CCluster gCluster(fPhotos);
+	gCluster.MergeEvents2Scale(fEventIdx, inConfig.threshold, inConfig.timeK, inConfig.gpsK);
+	gCluster.GetEventIndex(fEventIdx);
+	printf("With %d events after merged\n", fEventIdx.size());
+//	PrintEventInfo(fEventIdx);
 
-//	int pathLen = wcslen(inConfig.tszPhotoSegFile);
-//	if (wcscmp(inConfig.tszPhotoSegFile + pathLen - 3, L"xml") == 0){
-//		SavePhoto2EventAsXml(photos, inConfig.tszPhotoSegFile);
-//	}
-//	else{
-//		SavePhoto2EventAsText(photos, inConfig.tszPhotoSegFile);
-//	}
+	//post check
+	PostSegCheck postChecker(fPhotos, fEventIdx);
+	postChecker.FinalCheck();
+	photos = postChecker.GetPhotos();
+	eventIdx = postChecker.GetEventIdx();
+	printf("With %d events after final check\n", eventIdx.size());
+//	PrintEventInfo(eventIdx);
+
 //	//save event information into xml file
-//	pathLen = wcslen(inConfig.tszEventSegFile);
-//	if (wcscmp(inConfig.tszEventSegFile + pathLen - 3, L"xml") == 0){
-//		SaveEvent2PhotosAsXml(eventIdx, photos, inConfig.tszEventSegFile);
-//	}
-//	else{
-//		SaveEvent2PhotosAsText(eventIdx, photos, inConfig.tszEventSegFile);
-//	}
-//	//Compute Performance
+	int pathLen = wcslen(inConfig.tszEventSegFile);
+	if (wcscmp(inConfig.tszEventSegFile + pathLen - 3, L"xml") == 0){
+		SaveEvent2PhotosAsXml(eventIdx, photos, inConfig.tszEventSegFile);
+	}
+	else{
+		SaveEvent2PhotosAsText(eventIdx, photos, inConfig.tszEventSegFile);
+	}
+	//Compute Performance
 	EvaluateSegment evPerf(photos, eventIdx);
 	evPerf.GetPerformance();
 	Performance perf = evPerf.meanPerf;
 	ins << "Precision: " << perf.precision << "\nRecall: " << perf.recall << 
 		"\nF-score: " << perf.FScore << "\nAlbumItemCountSurplus: " << perf.AlbumCountSurplus;
 	ins.close();
+	cout << "Precision: " << perf.precision << "\tRecall: " << perf.recall << 
+		"\tF-score: " << perf.FScore << "\tAlbumItemCountSurplus: " << perf.AlbumCountSurplus;
 	return 0;
 }
 
@@ -157,6 +183,12 @@ void ParseInputFlags(int argc, TCHAR** argv, InputConfig& inputConfig){
 	inc.close();
 }
 
+void PrintEventInfo(vector<vector<int>>& eventIdx){
+	for (size_t i = 0; i < eventIdx.size(); i++){
+		cout << eventIdx[i].size() << "\t";
+	}
+	cout << "\n";
+}
 
 
 

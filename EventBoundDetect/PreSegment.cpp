@@ -32,8 +32,9 @@ int PreSegment::CoarseCluster(int start, int end){
 		}
 	}
 
-	if ((end - start < maxPhotoNum) && (countDayNum < maxDayNum))
+	if ((end - start < maxPhotoNum) && (countDayNum < maxDayNum)){
 		return 0;
+	}
 
 	int pos = (int)(max_element(tocScore.begin() + start, tocScore.begin() + end) - tocScore.begin());
 	boundIdx.push_back(pos);
