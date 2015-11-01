@@ -336,8 +336,8 @@ int SplitPhotoToDifferentUsers(vector<Photo_Feature_Set>& photos,
 	int n = 0;
 	for (size_t p = 0; p < photos.size(); p++){
 		string photo = photos[p].tszFileName;
-//		RemoveSubString(photo, "D:\\data\\event.detection\\ankur");
-		RemoveSubString(photo, "S:\\AlbumGroupings\\AnnotatedData");
+		RemoveSubString(photo, "D:\\data\\event.detection\\ankur\\AnnotatedData");
+//		RemoveSubString(photo, "S:\\AlbumGroupings\\AnnotatedData");
 		string userName = photo.substr(0, photo.find("\\"));
 		int loc = std::find(userNames.begin(), userNames.end(), userName) - userNames.begin();
 		if (loc == userNames.size()){
