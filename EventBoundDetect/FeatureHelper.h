@@ -62,7 +62,7 @@ struct SimpleEventInfo{
 };
 
 void RemoveSubString(string& str, const string& subStr);
-int CountNumEvents(vector<Photo_Feature_Set>& userPhotos);
+int CountNumEvents(vector<Photo_Feature_Set>& userPhotos, std::ofstream& out_info);
 int CountSubString(const string& str, const string& subStr);
 int SplitPhotoToDifferentUsers(vector<Photo_Feature_Set>& photos,
 	vector<vector<Photo_Feature_Set>>& splitPhotos, vector<string>& userNames);

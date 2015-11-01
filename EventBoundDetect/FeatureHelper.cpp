@@ -304,24 +304,27 @@ int CountSubString(const string& str, const string& subStr){
 	return n;
 }
 
-int CountNumEvents(vector<Photo_Feature_Set>& userPhotos){
+int CountNumEvents(vector<Photo_Feature_Set>& userPhotos, std::ofstream& out_info){
 	vector<string> folderNames;
 	for (size_t i = 0; i < userPhotos.size(); i++){
 		string photoPath = userPhotos[i].tszFileName;
 		int loc1 = photoPath.find("\\");
 		int loc2 = photoPath.find("\\", loc1 + 1);
-		if (loc2 == photoPath.length()){
+		if (loc2 == string::npos){
 			printf("no sub folder in '%s'\n", photoPath.c_str());
 			continue;
 		}
 		if (loc2 - loc1 < 2){
-			return 0;
+			continue;
 		}
 		string folder = photoPath.substr(loc1 + 1, loc2 - loc1 - 1);
 		if (std::find(folderNames.begin(), folderNames.end(), folder) == folderNames.end()){
 			folderNames.push_back(folder);
 			printf("new folder: %s\n", folder.c_str());
 		}
+	}
+	for (size_t i = 0; i < folderNames.size(); i++){
+		out_info << folderNames[i] << "\t";
 	}
 	return folderNames.size();
 }
@@ -333,8 +336,8 @@ int SplitPhotoToDifferentUsers(vector<Photo_Feature_Set>& photos,
 	int n = 0;
 	for (size_t p = 0; p < photos.size(); p++){
 		string photo = photos[p].tszFileName;
-		RemoveSubString(photo, "D:\\data\\event.detection\\ankur");
-//		RemoveSubString(photo, "S:\\AlbumGroupings\\AnnotatedData");
+//		RemoveSubString(photo, "D:\\data\\event.detection\\ankur");
+		RemoveSubString(photo, "S:\\AlbumGroupings\\AnnotatedData");
 		string userName = photo.substr(0, photo.find("\\"));
 		int loc = std::find(userNames.begin(), userNames.end(), userName) - userNames.begin();
 		if (loc == userNames.size()){
@@ -342,8 +345,8 @@ int SplitPhotoToDifferentUsers(vector<Photo_Feature_Set>& photos,
 			//add a new user
 			//if not in a subfolder, it is not in any event
 			//currently, we ignore it
-			if (CountSubString(photo, "\\") < 2){ continue; }
-			cout << photo << "\n";
+//			if (CountSubString(photo, "\\") < 2){ continue; }
+//			cout << photo << "\n";
 			userNames.push_back(userName);
 			sprintf_s(photos[p].tszFileName, MAX_PATH, "%s", photo.c_str());
 			vector<Photo_Feature_Set> newUser;
@@ -352,8 +355,8 @@ int SplitPhotoToDifferentUsers(vector<Photo_Feature_Set>& photos,
 			printf("Add a new user '%s' to user list\n", userName.c_str());
 		}
 		else{
-			if (CountSubString(photo, "\\") < 2){ continue; }
-			cout << photo << "\n";
+//			if (CountSubString(photo, "\\") < 2){ continue; }
+//			cout << photo << "\n";
 			sprintf_s(photos[p].tszFileName, MAX_PATH, "%s", photo.c_str());
 			splitPhotos[loc].push_back(photos[p]);
 		}

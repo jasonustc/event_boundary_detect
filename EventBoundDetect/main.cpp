@@ -3,8 +3,6 @@
 
 #include "stdafx.h"
 #include "io.h"
-#include "PhotoProcess.h"
-#include "Cluster.h"
 
 #include "3rdparty/pugixml.hpp"
 #include "FeatureHelper.h"
@@ -48,10 +46,10 @@ int _tmain(int argc, TCHAR** argv)
 	for (size_t i = 0; i < userNames.size(); i++){
 		string userXmlFile = userNames[i] + ".xml";
 		wstring tUserName(userXmlFile.begin(), userXmlFile.end());
-		int n = CountNumEvents(splitUsers[i]);
+		out_info << "username: " << userNames[i] << " numPhotos: " << splitUsers[i].size() << "\n";
+		int n = CountNumEvents(splitUsers[i], out_info);
+		out_info << " \nnumEvents: " << n << "\n";
 		SavePhoto2EventAsXml(splitUsers[i], tUserName.c_str());
-		out_info << "username: " << userNames[i] << " numPhotos: " << splitUsers[i].size()
-			<< " numEvents: " << n << "\n";
 	}
 	out_info.close();
 	return 0;
