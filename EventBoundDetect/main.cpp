@@ -37,7 +37,7 @@ int _tmain(int argc, TCHAR** argv)
 	vector<Photo_Feature_Set> photos;
 	HRESULT hr = S_OK;
 	CPhotoProcess photoProcess;
-	LoadPhotoFromXml(inConfig.photoFeatFile, photos);
+//	LoadPhotoFromXml(inConfig.photoFeatFile, photos);
 	hr = photoProcess.ProcessPhotos(inConfig.tszImageDir.c_str(), inConfig.tszPhotoSegFile);
 	photoProcess.GetPhotoFeats(photos);
 

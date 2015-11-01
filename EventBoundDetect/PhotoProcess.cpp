@@ -4,6 +4,7 @@
 #include "3rdparty\pugixml.hpp"
 #include "FeatureHelper.h"
 #include <algorithm>
+#include "xu_lib.h"
 
 CPhotoProcess::CPhotoProcess()
 {
@@ -40,6 +41,8 @@ HRESULT CPhotoProcess::GetTimeStampFromSinglePhoto(const string& imgPath, SYSTEM
 	fopen_s(&fp, imgPath.c_str(), "rb");
 	if (!fp){
 		std::printf("Can't open file %s.\n", imgPath.c_str());
+		string msg = "Can't open file " + imgPath;
+		XU_LOG_ERROR(msg.c_str());
 		return E_FAIL;
 	}
 	//sets the position indicator with the stream to a new position
@@ -76,6 +79,10 @@ HRESULT CPhotoProcess::GetTimeStampFromSinglePhoto(const string& imgPath, SYSTEM
 		}
 		else{
 			cout << "set image file name failed. " << tszFileName << "\n";
+			wstring wFile(tszFileName);
+			string sFile(wFile.begin(), wFile.end());
+			string err = "set image file name failed. " + sFile;
+			XU_LOG_ERROR(err.c_str());
 		}
 		return S_OK;
 		//return ERROR_PARSING_EXIF;
@@ -94,6 +101,10 @@ HRESULT CPhotoProcess::GetTimeStampFromSinglePhoto(const string& imgPath, SYSTEM
 		}
 		else{
 			cout << "set image file name failed. " << tszFileName << "\n";
+			wstring wFile(tszFileName);
+			string sFile(wFile.begin(), wFile.end());
+			string err = "set image file name failed. " + sFile;
+			XU_LOG_ERROR(err.c_str());
 		}
 		//latitude
 		photoExifInfo.latitude = photoExif.GeoLocation.Latitude;
