@@ -5,7 +5,7 @@
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <LocalDebuggerCommandArguments>-ff D:\exe\extract.event.feat\ankur\karend.xml</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>-ff D:\data\event.detection\ankur\feat_files\allAlbums_run2.xml</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
 </Project>

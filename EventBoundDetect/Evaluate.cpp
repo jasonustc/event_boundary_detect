@@ -159,17 +159,24 @@ void EvaluateSegment::ComputePerformance(){
 		return;
 	}
 	float avgPrecision(0), avgRecall(0), avgFscore(0), avgAlbumCountSurplus(0);
+	int count = 0;
 	for (size_t i = 0; i < eventPairIdx.size(); i++){
 		Performance perf = GetAlbumPerf(predEventIndex[i], trueEventIndex[eventPairIdx[i]] );
+//		if (perf.precision == 0 && perf.recall == 0){
+//			continue;
+//		}
 		pairPerf.push_back(perf);
 		avgPrecision += perf.precision;
 		avgRecall += perf.recall;
 		avgFscore += perf.FScore;
-		avgAlbumCountSurplus += perf.AlbumCountSurplus;
+//		count++;
 	}
 	meanPerf.precision = avgPrecision / eventPairIdx.size();
 	meanPerf.recall = avgRecall / eventPairIdx.size();
 	meanPerf.FScore = avgFscore / eventPairIdx.size();
+//	meanPerf.precision = avgPrecision / count;
+//	meanPerf.recall = avgRecall / count;
+//	meanPerf.FScore = avgFscore / count;
 	float true_size = trueEventIndex.size();
 	float pred_size = predEventIndex.size();
 	meanPerf.AlbumCountSurplus = (pred_size - true_size) / true_size;

@@ -17,6 +17,7 @@
 using namespace std;
 
 //TODO: test the code of time and distance computation
+//TODO: make all parameters adaptive
 
 void ParseInputFlags(int argc, TCHAR** argv, InputConfig& inputConfig);
 void PrintEventInfo(vector<vector<int>>& eventIdx);
