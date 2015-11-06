@@ -218,7 +218,7 @@ void CCluster::ComputeGlobalEventInfo(){
 	if (eventInfos.size() == 0){
 		return;
 	}
-	//only consider event in n month
+	//only consider sub event in 1 month
 	//window size: 1 month
 	//TODO: tune this parameter
 	float windowTime = 1 * 10 * 24 * 60;

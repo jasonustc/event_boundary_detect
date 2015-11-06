@@ -42,12 +42,6 @@
     <ClCompile Include="FeatureHelper.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="NewCluster.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Merge.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="PreSegment.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -58,6 +52,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="xu_lib.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NewCluster.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

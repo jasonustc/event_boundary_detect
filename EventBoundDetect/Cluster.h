@@ -256,7 +256,6 @@ public:
 
 private:
 	HRESULT Preprocess();
-	HRESULT PreprocessNew();
     static double GetSecondTime(IN SYSTEMTIME SysTime);
     HRESULT BuildIndex();
 	HRESULT MergeEvent();

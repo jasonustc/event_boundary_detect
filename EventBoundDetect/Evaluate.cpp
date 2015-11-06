@@ -126,6 +126,10 @@ void EvaluateSegment::BuildEventPairs(){
 	}
 }
 
+void OutputEventInfo(const string& infoFile, vector<int>& predIdx, 
+	vector<int>& trueIdx, vector<Photo_Feature_Set>& photos){
+}
+
 Performance EvaluateSegment::GetAlbumPerf(vector<int>& predIdx, vector<int>& trueIdx){
 	int TP(0), FP(0), FN(0);
 	if (predIdx.size() == 0 || trueIdx.size() == 0){

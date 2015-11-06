@@ -141,30 +141,6 @@ HRESULT CCluster::Preprocess()
 	return hr;
 }
 
-//get K_min and K_min based on the photo density of current day and global photo density
-HRESULT CCluster::PreprocessNew()
-{
-	HRESULT hr = S_OK;
-	int i = 0, j = 0;
-
-	if (m_iN <= 0)
-	{
-		return E_FAIL;
-	}
-	//sort in time order
-    this->SortPhotos();
-	m_iInitK = GetDayInfoInCollection(this->m_vecPhoto);
-	iTotalEvent = m_iInitK * MAX_EVENTS_PERDAY;
-	if (iTotalEvent > m_iN / 4)//can not exceed the 1/4+2 of the photos
-	{
-		iTotalEvent = m_iN / 4 + 2;
-	}
-	if (m_iInitK >= iTotalEvent)
-	{
-		m_iInitK = iTotalEvent - 1;//can not exceed the max NO. of events
-	}
-	return hr;
-}
 
 /*********************************************************************************************\
 SortPhotos

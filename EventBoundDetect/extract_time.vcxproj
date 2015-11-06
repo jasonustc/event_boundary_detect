@@ -94,7 +94,6 @@
     <ClCompile Include="FeatureHelper.cpp" />
     <ClCompile Include="FolderFileHelper.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="Merge.cpp" />
     <ClCompile Include="NewCluster.cpp" />
     <ClCompile Include="PhotoProcess.cpp" />
     <ClCompile Include="PreSegment.cpp" />

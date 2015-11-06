@@ -70,7 +70,6 @@ int _tmain(int argc, TCHAR** argv)
 		hr = photoProcess.ProcessPhotos(inConfig.tszImageDir.c_str());
 		photoProcess.GetPhotoFeats(photos);
 	}
-	t2 = clock();
 	//if no new photos need to do clustering
 	if (photos.size() == 0){
 		return 0;
@@ -96,11 +95,15 @@ int _tmain(int argc, TCHAR** argv)
 		//merge new clustered photos into final result
 		cluster.MergeTwoSegSet(fPhotos, fEventIdx, tmpPhotos, tmpEventIdx);
 	}
+	t2 = clock();
+	ins << "Presegment time: " << ((double)t2 - (double)t1) / CLOCKS_PER_SEC << "\n";
 	//merge is a global behavior
 	CCluster gCluster(fPhotos);
 	gCluster.MergeEvents2Scale(fEventIdx, inConfig.threshold, inConfig.timeK, inConfig.gpsK);
 	gCluster.GetEventIndex(fEventIdx);
 	printf("With %d events after merged\n", fEventIdx.size());
+	t1 = clock();
+	ins << "Merge time: " << ((double)t1 - (double)t2) / CLOCKS_PER_SEC << "\n";
 //	PrintEventInfo(fEventIdx);
 
 	//post check
@@ -109,6 +112,8 @@ int _tmain(int argc, TCHAR** argv)
 	photos = postChecker.GetPhotos();
 	eventIdx = postChecker.GetEventIdx();
 	printf("With %d events after final check\n", eventIdx.size());
+	t2 = clock();
+	ins << "Check time: " << ((double)t2 - (double)t1) / CLOCKS_PER_SEC << "\n";
 //	PrintEventInfo(eventIdx);
 
 //	//save event information into xml file
