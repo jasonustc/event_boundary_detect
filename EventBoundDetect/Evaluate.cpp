@@ -126,11 +126,27 @@ void EvaluateSegment::BuildEventPairs(){
 	}
 }
 
-void OutputEventInfo(const string& infoFile, vector<int>& predIdx, 
-	vector<int>& trueIdx, vector<Photo_Feature_Set>& photos){
+void EvaluateSegment::OutputPerfInfo(const string& infoFile, vector<int>& predIdx, 
+	vector<int>& trueIdx, vector<Photo_Feature_Set>& photos, Performance& perf){
+	string outputFile = infoFile + ".event.info.txt";
+	ofstream outEventInfo(outputFile, ios::app);
+	outEventInfo << "////////////////////////////////\n";
+	outEventInfo << "predEventSize\tTrueEventSize\tPrecision\tRecall\n";
+	outEventInfo << predIdx.size() << "\t" << trueIdx.size() << "\t"
+		<< perf.precision << "\t" << perf.recall << "\n";
+	outEventInfo << "================================\n";
+	for (size_t i = 0; i < predIdx.size(); i++){
+		outEventInfo << photos[predIdx[i]].tszFileName << "\n";
+	}
+	outEventInfo << "================================\n";
+	for (size_t i = 0; i < trueIdx.size(); i++){
+		outEventInfo << photos[trueIdx[i]].tszFileName << "\n";
+	}
+	outEventInfo << "////////////////////////////////\n";
+	outEventInfo.close();
 }
 
-Performance EvaluateSegment::GetAlbumPerf(vector<int>& predIdx, vector<int>& trueIdx){
+Performance EvaluateSegment::GetAlbumPerf(vector<int>& predIdx, vector<int>& trueIdx, const string& outputFile){
 	int TP(0), FP(0), FN(0);
 	if (predIdx.size() == 0 || trueIdx.size() == 0){
 		printf("empty predIdx or trueIdx\n");
@@ -155,17 +171,26 @@ Performance EvaluateSegment::GetAlbumPerf(vector<int>& predIdx, vector<int>& tru
 	perf.ComputeFscore();
 	cout << predIdx.size() << "\t" << trueIdx.size() << "\t"
 		<< perf.precision << "\t" << perf.recall << "\n";
+
+	OutputPerfInfo(outputFile, predIdx, trueIdx, this->photos, perf);
+
+	ofstream infoFile(outputFile, ios::app);
+	infoFile << predIdx.size() << "\t" << trueIdx.size() << "\t"
+		<< perf.precision << "\t" << perf.recall << "\n"; 
+
+	infoFile.close();
+
 	return perf;
 }
 
-void EvaluateSegment::ComputePerformance(){
+void EvaluateSegment::ComputePerformance(const string& infoFile){
 	if (eventPairIdx.size() == 0){
 		return;
 	}
 	float avgPrecision(0), avgRecall(0), avgFscore(0), avgAlbumCountSurplus(0);
 	int count = 0;
 	for (size_t i = 0; i < eventPairIdx.size(); i++){
-		Performance perf = GetAlbumPerf(predEventIndex[i], trueEventIndex[eventPairIdx[i]] );
+		Performance perf = GetAlbumPerf(predEventIndex[i], trueEventIndex[eventPairIdx[i]], infoFile);
 //		if (perf.precision == 0 && perf.recall == 0){
 //			continue;
 //		}
@@ -186,10 +211,10 @@ void EvaluateSegment::ComputePerformance(){
 	meanPerf.AlbumCountSurplus = (pred_size - true_size) / true_size;
 }
 
-void EvaluateSegment::GetPerformance(){
+void EvaluateSegment::GetPerformance(const string& infoFile){
 //	GetGroundTrueEventIdx();
 	GetGroundTrueEventIdx2();
 	BuildConfMatrix();
 	BuildEventPairs();
-	ComputePerformance();
+	ComputePerformance(infoFile);
 }

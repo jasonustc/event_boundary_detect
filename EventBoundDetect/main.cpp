@@ -25,33 +25,17 @@ int _tmain(int argc, TCHAR** argv)
 {
 	//default folder is the images folder in the same direcoty of the executable
 	if (argc < 2){
-		cout << "Usage: PhotoClustering.exe imgDir\n"
-			"-ug 1 or 0 [if use gps for event segmentation]\n" <<
-			"-ps photoSegmentFile [file to save result by photo] \n" <<
-			"-es eventSegmentFile [file to save result by event] \n" <<
-			"-gd float [global photo density of this user] \n" <<
-			"-K  int [the granuaty to merge two sub events] \n" <<
-			"-th float [the threshold to determine if two sub event are in same event] \n" <<
-			"-of outputFolderName [folder to save result photos] \n" <<
-			"-tK scale of time([5,20]) [parameter to control the time scale of events] \n" <<
-			"-et string [event txt file name] \n" <<
-			"-ff string [input photo feature file in xml format] \n" <<
-			"-ef string [input event feature file in xml format] \n" <<
-			"-gK scale of location([50, 100]) [parameter to control the gps scale of events] \n";
+		cout << "Usage: PhotoClustering.exe\n"
+			<< "-ff string [input photo feature file in xml format] \n";
 		return -1;
 	}
 
 	//parse parameters
-	string infoFile("info.txt");
-	ofstream ins(infoFile);
 	clock_t t1, t2;
 	InputConfig inConfig;
-	inConfig.tszImageDir = argv[1];
-	std::replace(inConfig.tszImageDir.begin(), inConfig.tszImageDir.end(), '/', '\\');
-	if (inConfig.tszImageDir.back() != '\\'){
-		inConfig.tszImageDir.append(L"\\");
-	} 
 	ParseInputFlags(argc, argv, inConfig);
+	string infoFile = inConfig.photoFeatFile + ".info.txt";
+	ofstream ins(infoFile);
 
 	//extract features
 	vector<Photo_Feature_Set> photos;
@@ -61,14 +45,9 @@ int _tmain(int argc, TCHAR** argv)
 	if (inConfig.photoFeatFile.size() > 0){
 		LoadPhotoFromXml(inConfig.photoFeatFile, photos);
 	}
-	else if (inConfig.eventFeatXml.size() > 0){
-		LoadEventFromXml(inConfig.eventFeatXml, photos, simEventInfos);
-	}
 	else{
-		HRESULT hr = S_OK;
-		CPhotoProcess photoProcess;
-		hr = photoProcess.ProcessPhotos(inConfig.tszImageDir.c_str());
-		photoProcess.GetPhotoFeats(photos);
+		cout << "Usage: PhotoClustering.exe " << "-ff string [input photo feature file in xml format] \n";
+		return 0;
 	}
 	//if no new photos need to do clustering
 	if (photos.size() == 0){
@@ -96,11 +75,17 @@ int _tmain(int argc, TCHAR** argv)
 		cluster.MergeTwoSegSet(fPhotos, fEventIdx, tmpPhotos, tmpEventIdx);
 	}
 	t2 = clock();
+	string clusterEventFile = inConfig.photoFeatFile + ".cluster.event.xml";
+	wstring wClusterEventFile(clusterEventFile.begin(), clusterEventFile.end());
+	SaveEvent2PhotosAsXml(fEventIdx, fPhotos, wClusterEventFile.c_str());
 	ins << "Presegment time: " << ((double)t2 - (double)t1) / CLOCKS_PER_SEC << "\n";
 	//merge is a global behavior
 	CCluster gCluster(fPhotos);
 	gCluster.MergeEvents2Scale(fEventIdx, inConfig.threshold, inConfig.timeK, inConfig.gpsK);
 	gCluster.GetEventIndex(fEventIdx);
+	string mergeEventFile = inConfig.photoFeatFile + ".merge.event.xml";
+	wstring wMergeEventFile(mergeEventFile.begin(), mergeEventFile.end());
+	SaveEvent2PhotosAsXml(fEventIdx, fPhotos, wMergeEventFile.c_str());
 	printf("With %d events after merged\n", fEventIdx.size());
 	t1 = clock();
 	ins << "Merge time: " << ((double)t1 - (double)t2) / CLOCKS_PER_SEC << "\n";
@@ -114,20 +99,26 @@ int _tmain(int argc, TCHAR** argv)
 	printf("With %d events after final check\n", eventIdx.size());
 	t2 = clock();
 	ins << "Check time: " << ((double)t2 - (double)t1) / CLOCKS_PER_SEC << "\n";
+	ins.close();
 //	PrintEventInfo(eventIdx);
 
 //	//save event information into xml file
-	int pathLen = wcslen(inConfig.tszEventSegFile);
-	if (wcscmp(inConfig.tszEventSegFile + pathLen - 3, L"xml") == 0){
-		SaveEvent2PhotosAsXml(eventIdx, photos, inConfig.tszEventSegFile);
-	}
-	else{
-		SaveEvent2PhotosAsText(eventIdx, photos, inConfig.tszEventSegFile);
-	}
+	string finalEventFile = inConfig.photoFeatFile + ".final.event.xml";
+	wstring wFinalEventFile(finalEventFile.begin(), finalEventFile.end());
+	SaveEvent2PhotosAsXml(fEventIdx, fPhotos, wFinalEventFile.c_str());
+//	int pathLen = wcslen(inConfig.tszEventSegFile);
+//	if (wcscmp(inConfig.tszEventSegFile + pathLen - 3, L"xml") == 0){
+//		SaveEvent2PhotosAsXml(eventIdx, photos, inConfig.tszEventSegFile);
+//	}
+//	else{
+//		SaveEvent2PhotosAsText(eventIdx, photos, inConfig.tszEventSegFile);
+//	}
+
 	//Compute Performance
 	EvaluateSegment evPerf(photos, eventIdx);
-	evPerf.GetPerformance();
+	evPerf.GetPerformance(infoFile);
 	Performance perf = evPerf.meanPerf;
+	ins.open(infoFile, ios::app);
 	ins << "Precision: " << perf.precision << "\nRecall: " << perf.recall << 
 		"\nF-score: " << perf.FScore << "\nAlbumItemCountSurplus: " << perf.AlbumCountSurplus;
 	ins.close();

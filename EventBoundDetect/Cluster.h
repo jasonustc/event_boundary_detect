@@ -211,15 +211,18 @@ private:
 	void GetGroundTrueEventIdx2();
 	void BuildConfMatrix();
 	void BuildEventPairs();
-	void ComputePerformance();
+	void ComputePerformance(const string& infoFile);
 	double ConfValueOf2Event(vector<int>& event1, vector<int>& event2);
+	void OutputPerfInfo(const string& infoFile, vector<int>& predIdx,
+		vector<int>& trueIdx, vector<Photo_Feature_Set>& photos, Performance& perf);
 
 public:
 	Performance meanPerf;
 
 public:
-	static Performance GetAlbumPerf(vector<int>& predIdx, vector<int>& trueIdx);
-	void GetPerformance();
+	Performance GetAlbumPerf(vector<int>& predIdx, vector<int>& trueIdx, 
+		const string& infoFile);
+	void GetPerformance(const string& infoFile);
 };
 
 
