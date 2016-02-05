@@ -414,8 +414,8 @@ void QuickSortEvent(vector<vector<int>>& eventIdx, vector<Photo_Feature_Set>& ph
 }
 
 
-//merge photos1 and photo2 into photos, ordered by time
-//then put them into 1
+//merge photos1 and photos2 into photos, ordered by time
+//then put them into photos1
 bool CCluster::MergeTwoSegSet(vector<Photo_Feature_Set>& photos1, vector<vector<int>>& eventIdx1,
 	vector<Photo_Feature_Set>& photos2, vector<vector<int>>& eventIdx2){
 	if (photos2.size() == 0 || eventIdx2.size() == 0){

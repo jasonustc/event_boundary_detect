@@ -26,13 +26,18 @@ int _tmain(int argc, TCHAR** argv)
 	//default folder is the images folder in the same direcoty of the executable
 	if (argc < 2){
 		cout << "Usage: PhotoClustering.exe\n"
-			<< "-ff string [input photo feature file in xml format] \n";
+			<< "imgDir -ff string [input photo feature file in xml format](optional) \n";
 		return -1;
 	}
 
 	//parse parameters
 	clock_t t1, t2;
 	InputConfig inConfig;
+	inConfig.tszImageDir = argv[1];
+	std::replace(inConfig.tszImageDir.begin(), inConfig.tszImageDir.end(), '/', '\\');
+	if (inConfig.tszImageDir.back() != '\\'){
+		inConfig.tszImageDir.append(L"\\");
+	}
 	ParseInputFlags(argc, argv, inConfig);
 	string infoFile = inConfig.photoFeatFile + ".info.txt";
 	ofstream ins(infoFile);
@@ -41,14 +46,27 @@ int _tmain(int argc, TCHAR** argv)
 	vector<Photo_Feature_Set> photos;
 	vector<SimpleEventInfo> simEventInfos;
 	vector<vector<int>> eventIdx;
+	//final event index and photos
+	vector<vector<int>> fEventIdx;
+	vector<Photo_Feature_Set> fPhotos;
 	t1 = clock();
 	if (inConfig.photoFeatFile.size() > 0){
 		LoadPhotoFromXml(inConfig.photoFeatFile, photos);
 	}
-	else{
-		cout << "Usage: PhotoClustering.exe " << "-ff string [input photo feature file in xml format] \n";
-		return 0;
+	else if (inConfig.eventFeatXml.size() > 0){
+		LoadEventFromXml(inConfig.eventFeatXml, photos, simEventInfos);
 	}
+	else{
+		HRESULT hr = S_OK;
+		CPhotoProcess photoProcess;
+		hr = photoProcess.ProcessPhotos(inConfig.tszImageDir.c_str());
+		//photos need event segmentation
+		photoProcess.GetPhotoFeats(photos);
+		//photos do not need event segmentation
+		photoProcess.GetOldEventIdx(fEventIdx);
+		photoProcess.GetOldPhotoFeats(fPhotos);
+	}
+
 	//if no new photos need to do clustering
 	if (photos.size() == 0){
 		return 0;
@@ -60,8 +78,6 @@ int _tmain(int argc, TCHAR** argv)
 	vector<vector<int>> preSegEventIdx = preseg.coEventIdx;
 	printf("With %d events after Pre Segment.\n", preSegEventIdx.size());
 //	PrintEventInfo(preSegEventIdx);
-	vector<vector<int>> fEventIdx;
-	vector<Photo_Feature_Set> fPhotos;
 	for (size_t i = 0; i < preSegEventIdx.size(); i++){
 		vector<Photo_Feature_Set> tmpPhotos;
 		vector<vector<int>> tmpEventIdx;

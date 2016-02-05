@@ -313,8 +313,8 @@ bool CPhotoProcess::LoadPhotoFeat(wstring& photoPath, Photo_Feature_Set& PhotoFe
 int CPhotoProcess::ProcessPhotos(const TCHAR* m_UsrDir)
 {
 	// load all photos and their time-stamp information into m_vecPhotoLabel
-	int ErrCode = LoadPhotos(m_UsrDir); // always succeed!
-	//ErrCode = GetReEventPhotos(m_UsrDir);
+//	int ErrCode = LoadPhotos(m_UsrDir); // always succeed!
+	int ErrCode = GetReEventPhotos(m_UsrDir);
 	//sort photos by time
 	this->SortPhotos();
 	return ErrCode;
@@ -359,7 +359,7 @@ bool CPhotoProcess::GetReEventPhotos(const TCHAR* m_UsrDir){
 	//here if the number of added photos is less than 20, we do not re-cluster
 	//TODO: adjust this threshold
 	//TODO: deal with the situation that user delete some photos
-	if (oldPhotos.size() > 0 &&  picFiles.size() < oldPhotos.size() + 5){
+	if (oldPhotos.size() > 0 &&  picFiles.size() < oldPhotos.size() + 20){
 		return false;
 	}
 	vector<Photo_Feature_Set> newPhotos;
@@ -371,7 +371,7 @@ bool CPhotoProcess::GetReEventPhotos(const TCHAR* m_UsrDir){
 			//load photo feature
 			if (LoadPhotoFeat(picFiles[i], newPhoto)){
 				newPhotos.push_back(newPhoto);
-				//push back all related photos
+				//push back all related photos in the overlap event
 				int e = PhotoTimeInOldEvent(newPhoto, oldEventInfos);
 				if (e >= 0 && std::find(mergeEventIdx.begin(), mergeEventIdx.end(), e) == mergeEventIdx.end()){
 					for (size_t p = 0; p < oldEventInfos[e].photoIdx.size(); p++){
