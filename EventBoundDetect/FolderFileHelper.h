@@ -8,40 +8,33 @@
 // 
 #pragma once
 
-#include <windows.h>
 #include <vector>
 #include <string>
-#include <io.h>
-#include <direct.h>
 
+StatusCode GetSubFolders(const char *dir, std::vector<std::string> &sub_folders);
+StatusCode GetImageFilesInDir(const char * wzPicDir, std::vector<std::string>& vecPicFile);
 
-HRESULT GetFilesInDirWithExt(const WCHAR * wzTxtDir, std::vector<wstring>& vecTxtFile, wstring& ext);
-HRESULT GetTxtFilesInDir(const WCHAR * wzTxtDir, std::vector<wstring>& vecTxtFile);
+StatusCode GetFilesInDirWithExt(const char * wzTxtDir, std::vector<string>& vecTxtFile, string& ext);
+StatusCode GetTxtFilesInDir(const char * wzTxtDir, std::vector<string>& vecTxtFile);
 //include .\ and all 1-level subfolders
-HRESULT GetImageFilesInDir(const WCHAR * wzPicDir, std::vector<std::wstring>& vecPicFile);
 
-HRESULT GetSubFolders(const WCHAR *wzDir, std::vector<std::wstring> &vSubFolders);
 
-HRESULT GetAllLeafSubFolders_FullPath(WCHAR *wzDir, std::vector<std::wstring> &vSubFoldersLeaf);
+StatusCode GetAllLeafSubFolders_FullPath(char *wzDir, std::vector<std::string> &vSubFoldersLeaf);
 
-HRESULT GetAllImageFilesInSubfolders(
-	__in const WCHAR *wzDir,
-	__out std::vector<std::wstring> &vAllFiles,
+StatusCode GetAllImageFilesInSubfolders(
+	__in const char *wzDir,
+	__out std::vector<std::string> &vAllFiles,
 	__in bool bTestReadable = true);
 
-HRESULT GetAllFilesFromListFile(
-	__in const WCHAR *wzFileList,
-	__in const WCHAR *wzRoot,
-	__out std::vector<std::wstring> &vAllFiles,
+StatusCode GetAllFilesFromListFile(
+	__in const char *wzFileList,
+	__in const char *wzRoot,
+	__out std::vector<std::string> &vAllFiles,
 	__in bool bTestReadable = true);
 
-HRESULT DeleteAllFilesInFolder(WCHAR *wzDir);
+StatusCode DeleteAllFilesInFolder(char *wzDir);
 
-HRESULT GetEncoderClsid(const WCHAR* format, CLSID* pClsid);
-
-bool ChooseFolder(HWND hParent, const std::wstring& title, std::wstring& folder);
-
-HRESULT GetFilename(const WCHAR* wzFilePath, std::wstring& filename);
+StatusCode GetFilename(const char* wzFilePath, std::string& filename);
 
 bool CopyFileToFolder(const string& filePath, const string& folderPath);
 bool MakeSubFolder(const string &parentFolder, const string& subFolder, string& fullFolderPath);

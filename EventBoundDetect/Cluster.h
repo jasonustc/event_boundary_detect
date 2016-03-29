@@ -1,12 +1,11 @@
 #ifndef CLUSTER_H
 #define CLUSTER_H
 
-#include "PhotoInfo.h"
-#include <direct.h>
 #include <opencv2/opencv.hpp>
 #include <opencv2/ml/ml.hpp>
-#include "io.h"
-#include "3rdparty\pugixml.hpp"
+#include <3rdparty/pugixml.hpp>
+
+#include "PhotoInfo.h"
 #include "FeatureHelper.h"
 #include "FolderFileHelper.h"
 
@@ -232,7 +231,7 @@ private:
 public:
 	CCluster(vector<Photo_Feature_Set> &m_vecPhotos);
 	~CCluster();
-	HRESULT Clustering(bool use_gps);
+	StatusCode Clustering(bool use_gps);
     void GetEventIndex(vector<vector<int>> &eventPhotoIndex);
     void GetPhotoFeatures(vector<Photo_Feature_Set> &photos);
 	Performance GetPerformance(vector<vector<int>>& eventIdxs, float threshold, float timeK, float gpsK);
@@ -253,14 +252,14 @@ public:
 	void PrintGroundTruth();
 
 private:
-	HRESULT Preprocess();
-	HRESULT PreprocessNew();
-    double GetSecondTime(IN SYSTEMTIME SysTime);
-    HRESULT BuildIndex();
-	HRESULT MergeEvent();
+	StatusCode Preprocess();
+	StatusCode PreprocessNew();
+    double GetSecondTime(SYSTEMTIME SysTime);
+    StatusCode BuildIndex();
+	StatusCode MergeEvent();
     void SortPhotos();
-	HRESULT EMtraining(Mat & usedSamples, bool use_gps);
-	HRESULT LoadFeatures(Mat &samples, bool use_gps);
+	StatusCode EMtraining(Mat & usedSamples, bool use_gps);
+	StatusCode LoadFeatures(Mat &samples, bool use_gps);
 
 
 private:

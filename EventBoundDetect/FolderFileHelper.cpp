@@ -8,113 +8,57 @@
 // 
 #include "stdafx.h"
 #include "FolderFileHelper.h"
-#include <ShlObj.h>
-#include <Shlwapi.h>
 #include <cassert>
-#include <strsafe.h>
+#include <boost/filesystem.hpp>
+
+
 #include "StringHelper.h"
-
-#include <gdiplus.h>
-#pragma comment(lib, "gdiplus.lib")
-#pragma comment(lib, "shlwapi.lib")
-
 using namespace std;
+using namespace boost::filesystem;
 
-HRESULT GetSubFolders(const WCHAR *wzDir, std::vector<wstring> &vSubFolders)
-{
-	assert(nullptr != wzDir);
-	if (nullptr == wzDir) return E_INVALIDARG;
-	if (!PathFileExists(wzDir)) return E_INVALIDARG;
+StatusCode GetSubFolders(const char *dir, std::vector<string> &sub_folders) {
+	if (nullptr == wzDir) return StatusCode::InvalidArgs;
+  path src_dir(dir);
+	if (!exists(src_dir) || !is_directory(src_dir)) return StatusCode::InvalidArgs;
 
-	vSubFolders.clear();
+	sub_folders.clear();
+  for(directory_iterator iter(src_dir); iter != directory_iterator(); ++iter) {
+    if (is_directory(iter->status()))  sub_folders.push_back(iter->path().string());
+  }
 
-	WIN32_FIND_DATA wfData;
-	WCHAR wzFilter[MAX_PATH];
-	StringCchPrintfW(wzFilter, MAX_PATH, L"%s\\*", wzDir);
-	HANDLE hFind = ::FindFirstFileW(wzFilter, &wfData);
-	if (INVALID_HANDLE_VALUE == hFind)
-	{
-		return E_INVALIDARG;
-	}
-	else
-	{
-		BOOL fNext = TRUE;
-		while (TRUE == fNext)
-		{
-			if (FILE_ATTRIBUTE_DIRECTORY ==
-				(wfData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
-			{
-				wstring strFolderName(wfData.cFileName);
-				if (0 != strFolderName.compare(L".") && 0 != strFolderName.compare(L".."))
-				{
-					vSubFolders.push_back(strFolderName);
-				}
-			}
-			fNext = ::FindNextFileW(hFind, &wfData);
-		}
-		::FindClose(hFind);
-	}
-
-	return S_OK;
+	return StatusCode::OK;
 }
 
-HRESULT GetImageFilesInDir(const WCHAR * wzPicDir, std::vector<wstring>& vecPicFile)
+StatusCode GetImageFilesInDir(const char * wzPicDir, std::vector<string>& vecPicFile)
 {
-	assert(nullptr != wzPicDir);
-	if (nullptr == wzPicDir) return E_INVALIDARG;
-	if (!PathFileExists(wzPicDir)) return E_INVALIDARG;
+	if (nullptr == wzPicDir) return StatusCode::InvalidArgs;
+  path img_dir(wzPicDir);
+	if (!exists(img_dir) || !is_directory(img_dir)) return StatusCode::InvalidArgs;
 	//load all images in subFolders
-	std::vector<wstring> subFolders;
-	GetSubFolders(wzPicDir, subFolders);
-	for (unsigned int i = 0; i < subFolders.size(); i++){
-		wstring fullPath(wzPicDir);
-		fullPath = fullPath + subFolders[i];
-		GetImageFilesInDir(fullPath.c_str(), vecPicFile);
+	std::vector<string> sub_folders;
+	GetSubFolders(wzPicDir, sub_folders);
+  for(const string& sub_folder : sub_folders) {
+		GetImageFilesInDir(sub_folder.c_str(), vecPicFile);
 	}
 //	vecPicFile.clear();
-	WIN32_FIND_DATA wfData;
-	WCHAR wzFilter[MAX_PATH];
+	char wzFileTypes[] = { ".jpg", ".bmp", ".png", ".gif", ".jpeg" };
 
-	const int nFileType = 5;
-	WCHAR wzFileType[nFileType][MAX_PATH] = { L"jpg", L"bmp", L"png", L"gif", L"jpeg" };
+  for(directory_iterator iter(img_dir); iter != directory_iterator(); ++iter) {
+    if (is_regular_file(iter->status())) {
+      const string& ext = iter->path().extension();
+      for(ftype: wzFileTypes) {
+        if (ext == ftype) {
+          vecPicFile.push_back(iter->path().string());
+          break;
+        }
+      }
+    }
+  }
 
-	for (int i = 0; i < nFileType; i++)
-	{
-		StringCchPrintfW(wzFilter, MAX_PATH, L"%s\\*.%s", wzPicDir, wzFileType[i]);
-		HANDLE hFind = ::FindFirstFileW(wzFilter, &wfData);
-		if (INVALID_HANDLE_VALUE == hFind) //we couldn't find any jpeg files under specified folder
-		{
-			//there are no jpg files under specified folder.     
-		}
-		else
-		{
-			BOOL fNext = TRUE;
-			while (TRUE == fNext)
-			{
-				if (FILE_ATTRIBUTE_DIRECTORY ==
-					(wfData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
-				{
-					fNext = ::FindNextFileW(hFind, &wfData);
-					continue;
-				}
-
-				wstring strPicFile(wfData.cFileName);
-				wstring folderPath(wzPicDir);
-				strPicFile = folderPath + _T("\\") + strPicFile;
-				vecPicFile.push_back(strPicFile);
-
-				fNext = ::FindNextFileW(hFind, &wfData);
-
-			}
-			::FindClose(hFind);
-		}
-	}
-
-	return S_OK;
-
+	return StatusCode::OK;
 }
 
-HRESULT GetTxtFilesInDir(const WCHAR * wzTxtDir, std::vector<wstring>& vecTxtFile)
+StatusCode GetTxtFilesInDir(const char * wzTxtDir, std::vector<wstring>& vecTxtFile)
 {
 	assert(nullptr != wzTxtDir);
 	if (nullptr == wzTxtDir) return E_INVALIDARG;
@@ -129,10 +73,10 @@ HRESULT GetTxtFilesInDir(const WCHAR * wzTxtDir, std::vector<wstring>& vecTxtFil
 	}
 //	vecTxtFile.clear();
 	WIN32_FIND_DATA wfData;
-	WCHAR wzFilter[MAX_PATH];
+	char wzFilter[MAX_PATH];
 
 	const int nFileType = 1;
-	WCHAR wzFileType[nFileType][MAX_PATH] = { L"txt"};
+	char wzFileType[nFileType][MAX_PATH] = { L"txt"};
 
 	for (int i = 0; i < nFileType; i++)
 	{
@@ -172,13 +116,13 @@ HRESULT GetTxtFilesInDir(const WCHAR * wzTxtDir, std::vector<wstring>& vecTxtFil
 
 //get files in dir with given extention ext
 //only search for files in the current folder
-HRESULT GetFilesInDirWithExt(const WCHAR * wzTxtDir, std::vector<wstring>& vecTxtFile, wstring& ext)
+StatusCode GetFilesInDirWithExt(const char * wzTxtDir, std::vector<wstring>& vecTxtFile, wstring& ext)
 {
 	assert(nullptr != wzTxtDir);
 	if (nullptr == wzTxtDir) return E_INVALIDARG;
 	if (!PathFileExists(wzTxtDir)) return E_INVALIDARG;
 	WIN32_FIND_DATA wfData;
-	WCHAR wzFilter[MAX_PATH];
+	char wzFilter[MAX_PATH];
 
 	const int nFileType = 1;
 
@@ -218,7 +162,7 @@ HRESULT GetFilesInDirWithExt(const WCHAR * wzTxtDir, std::vector<wstring>& vecTx
 
 }
 
-HRESULT GetAllLeafSubFolders_FullPath(const WCHAR *wzDir, std::vector<wstring> &vSubFoldersLeaf)
+StatusCode GetAllLeafSubFolders_FullPath(const char *wzDir, std::vector<wstring> &vSubFoldersLeaf)
 {
 	vSubFoldersLeaf.clear();
 
@@ -232,7 +176,7 @@ HRESULT GetAllLeafSubFolders_FullPath(const WCHAR *wzDir, std::vector<wstring> &
 
 		for (size_t i = 0; i < vSubFolders.size(); i++)
 		{
-			WCHAR wzSubDirPath[MAX_PATH];
+			char wzSubDirPath[MAX_PATH];
 			StringCchPrintfW(wzSubDirPath, MAX_PATH, L"%s\\%s", wzDir, vSubFolders[i]);
 
 			std::vector<wstring> vSubFoldersBottom;
@@ -260,8 +204,8 @@ HRESULT GetAllLeafSubFolders_FullPath(const WCHAR *wzDir, std::vector<wstring> &
 }
 
 //recursively collect all subforders
-HRESULT GetAllImageFilesInSubfolders(
-	__in const WCHAR *wzDir,
+StatusCode GetAllImageFilesInSubfolders(
+	__in const char *wzDir,
 	__out std::vector<wstring> &vAllFiles,
 	__in bool bTestReadable)
 {
@@ -283,7 +227,7 @@ HRESULT GetAllImageFilesInSubfolders(
 		{
 			vSubFoldersAllLevel.push_back(vSubFolders[i]);
 
-			WCHAR wzSubDirPath[MAX_PATH];
+			char wzSubDirPath[MAX_PATH];
 			StringCchPrintfW(wzSubDirPath, MAX_PATH, L"%s\\%s", wzDir, vSubFolders[i].c_str());
 
 			wprintf(L"%s\n", wzSubDirPath);
@@ -309,7 +253,7 @@ HRESULT GetAllImageFilesInSubfolders(
 	size_t iProgress = 0;
 	for (size_t i = 0; i < vSubFoldersAllLevel.size(); i++)
 	{
-		WCHAR wzSubDirPath[MAX_PATH];
+		char wzSubDirPath[MAX_PATH];
 		std::vector<wstring> vecPicFile;
 
 		if (vSubFoldersAllLevel[i].length() > 0)
@@ -321,7 +265,7 @@ HRESULT GetAllImageFilesInSubfolders(
 
 		for (size_t j = 0; j < vecPicFile.size(); j++)
 		{
-			WCHAR wzPicPath[MAX_PATH];
+			char wzPicPath[MAX_PATH];
 			StringCchPrintfW(wzPicPath, MAX_PATH, L"%s\\%s", wzSubDirPath, vecPicFile[j].c_str());
 
 			wstring strFile(wzPicPath);
@@ -354,9 +298,9 @@ HRESULT GetAllImageFilesInSubfolders(
 	return S_OK;
 }
 
-HRESULT GetAllFilesFromListFile(
-	__in const WCHAR *wzFileList,
-	__in const WCHAR *wzRoot,
+StatusCode GetAllFilesFromListFile(
+	__in const char *wzFileList,
+	__in const char *wzRoot,
 	__out std::vector<wstring> &vAllFiles,
 	__in bool bTestReadable)
 {
@@ -367,13 +311,13 @@ HRESULT GetAllFilesFromListFile(
 		return E_INVALIDARG;
 	}
 
-	WCHAR wzTmp[MAX_PATH];
+	char wzTmp[MAX_PATH];
 	while (fgetws(wzTmp, MAX_PATH, fp) != nullptr)
 	{
 		wstring strFile(wzTmp);
 		trim(strFile);
 
-		WCHAR wzFilePath[MAX_PATH];
+		char wzFilePath[MAX_PATH];
 		if (nullptr != wzRoot)
 		{
 			StringCchPrintfW(wzFilePath, MAX_PATH, L"%s\\%s", wzRoot, strFile);
@@ -401,15 +345,15 @@ HRESULT GetAllFilesFromListFile(
 	return S_OK;
 }
 
-HRESULT DeleteAllFilesInFolder(WCHAR *wzPicDir)
+StatusCode DeleteAllFilesInFolder(char *wzPicDir)
 {
 	assert(nullptr != wzPicDir);
 	if (nullptr == wzPicDir) return E_INVALIDARG;
 	if (!PathFileExists(wzPicDir)) return E_INVALIDARG;
 
 	WIN32_FIND_DATA wfData;
-	WCHAR wzFilter[MAX_PATH];
-	WCHAR wzFile[MAX_PATH];
+	char wzFilter[MAX_PATH];
+	char wzFile[MAX_PATH];
 
 	StringCchPrintfW(wzFilter, MAX_PATH, L"%s\\*.*", wzPicDir);
 	HANDLE hFind = ::FindFirstFileW(wzFilter, &wfData);
@@ -440,67 +384,14 @@ HRESULT DeleteAllFilesInFolder(WCHAR *wzPicDir)
 
 	return S_OK;
 }
-HRESULT GetEncoderClsid(const WCHAR* format, CLSID* pClsid)
-{
-	unsigned int  num = 0;    // number of image encoders
-	unsigned int  size = 0;   // size of the image encoder array in bytes
 
-	Gdiplus::GetImageEncodersSize(&num, &size);
-	if (size == 0)return -1;
 
-	Gdiplus::ImageCodecInfo* imageCodecInfo = new Gdiplus::ImageCodecInfo[size];
-	Gdiplus::GetImageEncoders(num, size, imageCodecInfo);
-
-	for (unsigned int i = 0; i < num; ++i)
-	{
-		if (wcscmp(imageCodecInfo[i].MimeType, format) == 0)
-		{
-			*pClsid = imageCodecInfo[i].Clsid;
-			delete[] imageCodecInfo;
-			return i;
-		}
-	}
-	delete[] imageCodecInfo;
-	return -1;
-}
-
-bool ChooseFolder(HWND hParent, const wstring& title, wstring& folder)
-{
-	bool success = false;
-
-	BROWSEINFO bi;
-	::ZeroMemory(&bi, sizeof(bi));
-
-	WCHAR pBuffer[MAX_PATH] = { 0 };
-
-	bi.hwndOwner = hParent;
-	bi.pszDisplayName = pBuffer;
-	bi.lpszTitle = title.c_str();
-	bi.pidlRoot = 0;
-	bi.ulFlags = BIF_RETURNONLYFSDIRS |
-		BIF_NEWDIALOGSTYLE;
-
-	LPITEMIDLIST pItem = ::SHBrowseForFolder(&bi);
-	if (pItem != nullptr)
-	{
-		::SHGetPathFromIDList(pItem, pBuffer);
-		success = true;
-
-		IMalloc* pMalloc = nullptr;
-		if (SUCCEEDED(::SHGetMalloc(&pMalloc)))
-			pMalloc->Free(pItem);
-	}
-
-	folder = wstring(pBuffer);
-	return success;
-}
-
-HRESULT GetFilename(const WCHAR* wzFilePath, std::wstring& filename)
+StatusCode GetFilename(const char* wzFilePath, std::wstring& filename)
 {
 	if (wzFilePath == nullptr) return E_POINTER;
 
 	size_t length = wcslen(wzFilePath);
-	const WCHAR* token = wcsrchr(wzFilePath, '\\');
+	const char* token = wcsrchr(wzFilePath, '\\');
 	filename.assign((token ? token + 1 : wzFilePath), wzFilePath + length);
 
 	return S_OK;

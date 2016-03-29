@@ -39,7 +39,7 @@ struct Photo_Feature_Set
 {
 	//1. Time Feature
 	double dTimeStamp;
-	SYSTEMTIME SysTime;
+	struct tm SysTime;
 	// 2. Photo index
 	int photoIndex = 0;
 	//3. aesthetic quality
@@ -49,7 +49,7 @@ struct Photo_Feature_Set
 	//5.image path
 	char tszFileName[MAX_PATH];
 	//6.label of best photo
-	BOOL fRep = 0;
+	bool fRep = 0;
 	//7. longitude
 	double longitude = 0;
 	//8. latitude
@@ -115,31 +115,31 @@ private:
 		return subStrs;
 	}
 
-	SYSTEMTIME String2SysTime(const string& str){
-		SYSTEMTIME sysTime = { 0 };
+	struct tm String2SysTime(const string& str){
+		struct tm sysTime;
 		vector<string> subStrs = split(str, ':');
 		if (subStrs.size() != 6){
 			return sysTime;
 		}
 		std::istringstream iss;
 		iss.str(subStrs[0]);
-		iss >> sysTime.wYear;
+		iss >> sysTime.tm_year;
 		iss.clear();
 		iss.str(subStrs[1]);
-		iss >> sysTime.wMonth;
+		iss >> sysTime.tm_mon;
 		iss.clear();
 		iss.str(subStrs[2]);
-		iss >> sysTime.wDay;
+		iss >> sysTime.tm_mday;
 		iss.clear();
 		iss.str(subStrs[3]);
-		iss >> sysTime.wHour;
+		iss >> sysTime.tm_hour;
 		iss.clear();
 		iss.str(subStrs[4]);
 		iss.clear();
-		iss >> sysTime.wMinute;
+		iss >> sysTime.tm_min;
 		iss.clear();
 		iss.str(subStrs[5]);
-		iss >> sysTime.wSecond;
+		iss >> sysTime.tm_sec;
 		return sysTime;
 	}
 

@@ -100,9 +100,9 @@ parameter:
 ptszImgFile: JPEG file name
 
 return:
-HRESULT
+StatusCode
 */
-HRESULT CPVImageInfo::SetImageFile(TCHAR *ptszImgFile)
+StatusCode CPVImageInfo::SetImageFile(char *ptszImgFile)
 {
 	_tcscpy_s(m_tszFileName, ptszImgFile);
 
@@ -146,7 +146,7 @@ HRESULT CPVImageInfo::SetImageFile(TCHAR *ptszImgFile)
 	CloseHandle(hFile);
 
 	//get information of this file
-	HRESULT hRlt = GetExifInfo();
+	StatusCode hRlt = GetExifInfo();
 	// if (S_OK != hRlt)				// Modified by Tao Mei
 	if ((m_stTakenDateTime.wDay == 0) && (m_stTakenDateTime.wHour == 0)
 		&& (m_stTakenDateTime.wMinute == 0) && (m_stTakenDateTime.wSecond == 0))
@@ -202,9 +202,9 @@ parameter:
 pst: [out] the taken time
 
 return:
-HRESULT
+StatusCode
 */
-HRESULT CPVImageInfo::GetDTOrig(SYSTEMTIME *pst) const
+StatusCode CPVImageInfo::GetDTOrig(SYSTEMTIME *pst) const
 {
 	*pst = m_stTakenDateTime;
 	return S_OK;
@@ -219,9 +219,9 @@ pszExifDT: file's data info
 pst: [out] the converted datetime
 
 return:
-HRESULT
+StatusCode
 */
-HRESULT CPVImageInfo::ExifDTToDateTime(TCHAR *pszExifDT, SYSTEMTIME *pst)
+StatusCode CPVImageInfo::ExifDTToDateTime(char *pszExifDT, SYSTEMTIME *pst)
 {
 	enum euDateTime
 	{
@@ -240,15 +240,15 @@ HRESULT CPVImageInfo::ExifDTToDateTime(TCHAR *pszExifDT, SYSTEMTIME *pst)
 		return E_POINTER;
 	}
 
-	TCHAR *pszSpace = NULL;
+	char *pszSpace = NULL;
 
 	if (NULL != (pszSpace = StrChr(pszExifDT, _T(' '))))
 	{
 		*pszSpace = _T(':');
 	}
-	TCHAR *next_token;
-	TCHAR *ptszSeps = _T(":");
-	TCHAR *ptszToken = _tcstok_s(pszExifDT, ptszSeps, &next_token);
+	char *next_token;
+	char *ptszSeps = _T(":");
+	char *ptszToken = _tcstok_s(pszExifDT, ptszSeps, &next_token);
 	int  iCount = 0;
 
 	while ((NULL != ptszToken) && (iCount < EUDATE_SIZE))
@@ -320,9 +320,9 @@ parameter:
 NONE
 
 return:
-HRESULT
+StatusCode
 */
-HRESULT CPVImageInfo::GetExifInfo()
+StatusCode CPVImageInfo::GetExifInfo()
 {
 	struct ImageProperty
 	{
@@ -340,7 +340,7 @@ HRESULT CPVImageInfo::GetExifInfo()
 	int     i;
 	int     iPos = 0;
 	WORD    usRlt;
-	HRESULT hRlt;
+	StatusCode hRlt;
 	bool    fContainMakers = true;
 
 	if (NULL == m_pbImgInfo)
@@ -498,7 +498,7 @@ HRESULT CPVImageInfo::GetExifInfo()
 		//datetime
 		if (PROPERTYTAG_DTO == imgPropItem.usTag)
 		{
-			TCHAR szStr[MAX_PATH];
+			char szStr[MAX_PATH];
 
 			hRlt = GetString(imgPropItem.uOffset + m_iTiffOffset,
 				imgPropItem.uCount,
@@ -547,9 +547,9 @@ iOffset: the offset of the buffer
 refuRlt: [out] the value
 
 return:
-HRESULT
+StatusCode
 */
-HRESULT CPVImageInfo::GetUInt(int iOffset, DWORD &refuRlt) const
+StatusCode CPVImageInfo::GetUInt(int iOffset, DWORD &refuRlt) const
 {
 	if ((iOffset < 0) || (iOffset + 3 >= IMGINFO_LENGTH))
 	{
@@ -583,9 +583,9 @@ iOffset: the offset of the buffer
 refusRlt: [out] the value
 
 return:
-HRESULT
+StatusCode
 */
-HRESULT CPVImageInfo::GetUShort(int iOffset, WORD &refusRlt) const
+StatusCode CPVImageInfo::GetUShort(int iOffset, WORD &refusRlt) const
 {
 	if ((iOffset < 0) || (iOffset + 1 >= IMGINFO_LENGTH))
 	{
@@ -616,9 +616,9 @@ iCount: the size of the data
 pszStr: [out] the value
 
 return:
-HRESULT
+StatusCode
 */
-HRESULT CPVImageInfo::GetString(int iOffset, int iCount, TCHAR *pszStr) const
+StatusCode CPVImageInfo::GetString(int iOffset, int iCount, char *pszStr) const
 {
 	if (NULL == pszStr)
 	{
@@ -632,7 +632,7 @@ HRESULT CPVImageInfo::GetString(int iOffset, int iCount, TCHAR *pszStr) const
 	int i;
 	for (i = 0; i < iCount; ++i)
 	{
-		pszStr[i] = (TCHAR)m_pbImgInfo[iOffset + i];
+		pszStr[i] = (char)m_pbImgInfo[iOffset + i];
 	}
 
 	pszStr[i] = _T('\0');
@@ -679,13 +679,13 @@ parameter:
 NONE
 
 return:
-HRESULT
+StatusCode
 */
-HRESULT CPVImageInfo::GetThumbInfo()
+StatusCode CPVImageInfo::GetThumbInfo()
 {
 	WORD    nFld;
 	int     iPos = 0;
-	HRESULT hRlt = S_OK;
+	StatusCode hRlt = S_OK;
 
 	//Get thumbnail's offset and length
 	if (S_OK != (hRlt = GetUShort(iPos, nFld)))
@@ -769,12 +769,12 @@ uWidth:  [out]Width
 uHeight: [out]Height
 
 return:
-HRESULT
+StatusCode
 */
-HRESULT CPVImageInfo::GetResolution(WORD &uWidth, WORD &uHeight)
+StatusCode CPVImageInfo::GetResolution(WORD &uWidth, WORD &uHeight)
 {
 	int     iPos = IMGINFO_LENGTH - sizeof(WORD);
-	HRESULT hRlt = S_OK;
+	StatusCode hRlt = S_OK;
 	WORD    wTag;
 
 	m_fBigEdian = true;
@@ -822,9 +822,9 @@ HRESULT CPVImageInfo::GetResolution(WORD &uWidth, WORD &uHeight)
 	return S_OK;
 }
 
-HRESULT CPVImageInfo::GetFileCreationTime(SYSTEMTIME &SysTime)
+StatusCode CPVImageInfo::GetFileCreationTime(SYSTEMTIME &SysTime)
 {
-	HRESULT hr = S_OK;
+	StatusCode hr = S_OK;
 
 	WIN32_FIND_DATA FindFileData;
 	HANDLE hd = FindFirstFile(m_tszFileName, &FindFileData);

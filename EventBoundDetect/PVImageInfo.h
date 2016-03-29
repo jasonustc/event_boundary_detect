@@ -5,7 +5,6 @@
 // description:
 // This class is used to read JPEG files and get informations of this photo
 //
-#include <Shlwapi.h>
 
 class CPVImageInfo
 {
@@ -23,28 +22,28 @@ private:
 	DWORD      m_uThumbLength;
 	WORD       m_uThumbWidth;     //Thumbnail width
 	WORD       m_uThumbHeight;    //Thumbnail height
-	TCHAR       m_tszFileName[MAX_PATH];	// Image File Name, add by Tao Mei
+	char       m_tszFileName[MAX_PATH];	// Image File Name, add by Tao Mei
 
 private:
-	HRESULT GetFileCreationTime(SYSTEMTIME& SysTime);
+	StatusCode GetFileCreationTime(struct tm& SysTime);
 
-	HRESULT GetString(int iOffset, int iCount, TCHAR *pszStr) const;
-	HRESULT GetUShort(int iOffset, WORD &refusRlt) const;
-	HRESULT GetUInt(int iOffset, DWORD &refuRlt) const;
-	HRESULT GetExifInfo();
-	HRESULT GetThumbInfo();
-	HRESULT GetResolution(WORD &uWidth, WORD &uHeight);
+	StatusCode GetString(int iOffset, int iCount, char *pszStr) const;
+	StatusCode GetUShort(int iOffset, WORD &refusRlt) const;
+	StatusCode GetUInt(int iOffset, DWORD &refuRlt) const;
+	StatusCode GetExifInfo();
+	StatusCode GetThumbInfo();
+	StatusCode GetResolution(WORD &uWidth, WORD &uHeight);
 
 public:
 
 	explicit CPVImageInfo();
 	~CPVImageInfo();
 
-	static HRESULT ExifDTToDateTime(TCHAR *pszExifDT, SYSTEMTIME *pst);
+	static StatusCode ExifDTToDateTime(char *pszExifDT, SYSTEMTIME *pst);
 	int GetImageHeight() const;
 	int GetImageWidth() const;
-	HRESULT GetDTOrig(SYSTEMTIME *pst) const;
-	HRESULT SetImageFile(TCHAR *ptszImgFile);
+	StatusCode GetDTOrig(SYSTEMTIME *pst) const;
+	StatusCode SetImageFile(char *ptszImgFile);
 	void GetThumbnail(int &iOffset, int &iLength, int &iWidth, int &iHeight);
 
 };

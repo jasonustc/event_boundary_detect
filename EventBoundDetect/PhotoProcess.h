@@ -7,7 +7,7 @@
 #include "FolderFileHelper.h"
 
 
-struct PhotoExifInfo{ 
+struct PhotoExifInfo{
 	double longitude;
 	double latitude;
 	double altitude;
@@ -26,7 +26,7 @@ struct PhotoExifInfo{
 	float Brightness(){
 //		cout << "Fn: " << Fnumber << " ExpoTime: " << ExpoTime << " ISOrate: " << ISOsr << "\n";
 		if (Fnumber == 0 || ExpoTime == 0 || ISOsr == 0){
-			return NULL;
+			return 0;
 		}
 		float apertValue = log2f(Fnumber * Fnumber);
 		float timeValue = -log2f(ExpoTime);
@@ -42,24 +42,24 @@ class CPhotoProcess
 {
 public:
 	CPhotoProcess();
-	CPhotoProcess(TCHAR* SourceDir,TCHAR* OutputDir,string &segmentPhotoDir);
+	CPhotoProcess(char* SourceDir,char* OutputDir,string &segmentPhotoDir);
 	~CPhotoProcess();
-	int ProcessPhotos(const TCHAR* imgDir);
+	int ProcessPhotos(const char* imgDir);
     void GetPhotoFeats(vector<Photo_Feature_Set> &photoFeats);
 	void GetOldPhotoFeats(vector<Photo_Feature_Set>& oldPhotos){ oldPhotos = vecOldPhotos; }
 	void GetOldEventIdx(vector<vector<int>>& oldEventIdx){ oldEventIdx = vecOldEventIdx; }
 
 protected:
 	void SortPhotos();
-	HRESULT LoadPhotos(const TCHAR* imgDir);
-	HRESULT GetTimeStampFromSinglePhoto(const string& imgPath, SYSTEMTIME& sysTime,
+	StatusCode LoadPhotos(const char* imgDir);
+	StatusCode GetTimeStampFromSinglePhoto(const string& imgPath, SYSTEMTIME& sysTime,
 	double& longtitude, double& latitude, double& altitude);
-	HRESULT GetTimeStampFromSinglePhoto(const string& imgPath, SYSTEMTIME& sysTime, 
+	StatusCode GetTimeStampFromSinglePhoto(const string& imgPath, SYSTEMTIME& sysTime,
 		PhotoExifInfo& photoExifInfo);
-	double GetSecondTime(IN SYSTEMTIME SysTime);
-	HRESULT ProcessSortedPhotos(int bestPhotoNum);
+	double GetSecondTime(SYSTEMTIME SysTime);
+	StatusCode ProcessSortedPhotos(int bestPhotoNum);
 	//get the photos that need to be reclustered
-	bool GetReEventPhotos(const TCHAR* m_UsrDir);
+	bool GetReEventPhotos(const char* m_UsrDir);
 	bool LoadPhotoFeat(wstring& photoPath, Photo_Feature_Set& PhotoFeat);
 
 private:
@@ -69,7 +69,7 @@ private:
 	vector<Photo_Feature_Set> vecOldPhotos;
 	vector<vector<int>> vecOldEventIdx;
 
-	int m_iPhotoNum; 
+	int m_iPhotoNum;
 	int m_iEventNum;
 
 };

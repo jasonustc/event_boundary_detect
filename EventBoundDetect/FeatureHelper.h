@@ -12,15 +12,15 @@
 //input configurations structure
 struct InputConfig{
     //input photo directory
-	wstring tszImageDir;
+	string tszImageDir;
 	//output photo directory
-	wstring tszOutImageDir;
+	string tszOutImageDir;
 	//if we use gps information to do event clustering
 	bool use_gps;
     //output file of clustering indexed by photos
-	TCHAR* tszPhotoSegFile;
+	const char* tszPhotoSegFile;
     //output file of clustering indexed by events
-	TCHAR* tszEventSegFile;
+	const char* tszEventSegFile;
 	//global photo density
 	float global_density;
 	//K
@@ -38,17 +38,17 @@ struct InputConfig{
 
 	//event feature file(txt)
 	string eventFileTxt;
-	
+
 	//event feature file(xml)
 	string eventFeatXml;
 
 
 
-	InputConfig() :K(10), use_gps(false) , global_density(1), threshold(0.75), 
+	InputConfig() :K(10), use_gps(false) , global_density(1), threshold(0.75),
 		timeK(1), gpsK(1){
-		this->tszPhotoSegFile = _T("photo_event.xml");
-		this->tszEventSegFile = _T("event_photos.xml");
-		this->tszOutImageDir = _T("");
+		this->tszPhotoSegFile = "photo_event.xml";
+		this->tszEventSegFile = "event_photos.xml";
+		this->tszOutImageDir = "";
 		this->photoFeatFile = "";
 		this->eventFileTxt = "";
 	}
@@ -63,13 +63,13 @@ struct SimpleEventInfo{
 
 vector<string> split(const string& s, char delim);
 int GetDayInfoInCollection(vector<Photo_Feature_Set>& photos);
-bool SaveEvent2PhotosAsXml(const vector<vector<int>> eventIdx, const vector<Photo_Feature_Set> &photos, const TCHAR* outFilePath);
-bool SavePhoto2EventAsXml(const vector<Photo_Feature_Set> &photos, const TCHAR* outFilePath);
+bool SaveEvent2PhotosAsXml(const vector<vector<int>> eventIdx, const vector<Photo_Feature_Set> &photos, const char* outFilePath);
+bool SavePhoto2EventAsXml(const vector<Photo_Feature_Set> &photos, const char* outFilePath);
 int LoadPhotoFromXml(string& xmlFile, vector<Photo_Feature_Set>& photos);
 int LoadEventFromXml(string& xmlFile, vector<Photo_Feature_Set>& photos, vector<SimpleEventInfo>& simEventInfos);
 int LoadPhotoFromTxtFolder(string& folderPath, vector<Photo_Feature_Set>& photos);
-bool SavePhoto2EventAsText(const vector<Photo_Feature_Set> &photos, const TCHAR* outFilePath);
-bool SaveEvent2PhotosAsText(const vector<vector<int>> eventIdx, const vector<Photo_Feature_Set> &photos, const TCHAR* outFilePath);
+bool SavePhoto2EventAsText(const vector<Photo_Feature_Set> &photos, const char* outFilePath);
+bool SaveEvent2PhotosAsText(const vector<vector<int>> eventIdx, const vector<Photo_Feature_Set> &photos, const char* outFilePath);
 bool AssignPhotos2Event(vector<Photo_Feature_Set>& photos, int days, InputConfig& inputCfg);
 void SaveImagesToFolder(const vector<Photo_Feature_Set>& photos, vector<vector<int>>& images, const string& saveFolder);
 
