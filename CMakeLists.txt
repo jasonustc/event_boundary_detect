@@ -24,6 +24,7 @@ endif (NOT CMAKE_BUILD_TYPE)
 SET(CMAKE_DEBUG_POSTFIX  "d")
 
 find_library(Boost Requried)
+find_library(OpenCV Requried)
 
 #comment for fast build in dev
 #include(external)
