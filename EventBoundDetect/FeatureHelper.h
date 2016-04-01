@@ -44,7 +44,7 @@ struct InputConfig{
 
 
 
-	InputConfig() :K(10), use_gps(false) , global_density(1), threshold(0.75),
+	InputConfig() :use_gps(false) , global_density(1), K(10), threshold(0.75),
 		timeK(1), gpsK(1){
 		this->tszPhotoSegFile = "photo_event.xml";
 		this->tszEventSegFile = "event_photos.xml";

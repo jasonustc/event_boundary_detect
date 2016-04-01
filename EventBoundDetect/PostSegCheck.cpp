@@ -1,5 +1,4 @@
 #include "PostSegCheck.h"
-#include "xu_lib.h"
 
 int PostSegCheck::EventNumCheck(){
 	for (size_t i = 0; i < eventIdx_.size(); i++){
@@ -40,8 +39,8 @@ double PostSegCheck::LocSim(Photo_Feature_Set& photo1, Photo_Feature_Set& photo2
 
 double PostSegCheck::TimeSim(Photo_Feature_Set& photo1, Photo_Feature_Set& photo2){
 	//in minutes
-	double time1 = GetSecondTime(photo1.SysTime);
-	double time2 = GetSecondTime(photo2.SysTime);
+	double time1 = mktime(&(photo1.SysTime));
+	double time2 = mktime(&(photo2.SysTime));
 	return time2 - time1;
 }
 

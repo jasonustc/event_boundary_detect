@@ -34,8 +34,8 @@ struct PhotoExifInfo{
 		return apertValue + timeValue - speedValue;
 	}
 
-	PhotoExifInfo() : longitude(0.), latitude(0.), altitude(0.),
-		Fnumber(0.), ExpoTime(0.), ISOsr(0.), maker(""), camModel(""){}
+	PhotoExifInfo() : longitude(0.), latitude(0.), altitude(0.), 
+  maker(""), camModel(""), Fnumber(0.), ExpoTime(0.), ISOsr(0.){}
 };
 
 class CPhotoProcess
