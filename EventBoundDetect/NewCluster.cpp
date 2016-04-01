@@ -16,9 +16,9 @@
 		Photo_Feature_Set photo2 = photos[i];
 		float timeGap = photo2.dTimeStamp - photo1.dTimeStamp; 
 		gapTimeVec.push_back(timeGap);
-		if (photo2.SysTime.wDay != photo1.SysTime.wDay || 
-			photo2.SysTime.wMonth != photo1.SysTime.wMonth ||
-			photo2.SysTime.wYear != photo1.SysTime.wYear){
+		if (photo2.SysTime.tm_mday != photo1.SysTime.tm_mday || 
+			photo2.SysTime.tm_mon != photo1.SysTime.tm_mon ||
+			photo2.SysTime.tm_year != photo1.SysTime.tm_year){
 			spanDays++;
 			//if two photos are not in the same day, we do not consider the time
 			//as photo density
@@ -750,7 +750,7 @@ void EventInfo::ComputeEventFeat(vector<Photo_Feature_Set>& photos){
 		numGps++;
 	}
 	float bv0 = photos[0].brightValue;
-	if (bv0 != NULL){
+	if (bv0 != 0){
 		brightVals.push_back(bv0);
 		numBv++;
 	}
@@ -766,7 +766,7 @@ void EventInfo::ComputeEventFeat(vector<Photo_Feature_Set>& photos){
 
 		//camera(brightness) related
 		float bv2 = photos[idx2].brightValue;
-		if (bv2 != NULL){
+		if (bv2 != 0){
 			brightVals.push_back(bv2);
 			numBv++;
 		}

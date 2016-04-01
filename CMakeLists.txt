@@ -33,12 +33,17 @@ include_directories(
     ${PROJECT_SOURCE_DIR}/EventBoundDetect
     )
 
+set(LIBS opencv_core opencv_highgui opencv_imgproc opencv_ml boost_system boost_filesystem)
+
 file(GLOB src_list
 	"${PROJECT_SOURCE_DIR}/EventBoundDetect/*.h"
 	"${PROJECT_SOURCE_DIR}/EventBoundDetect/*.cpp"
+	"${PROJECT_SOURCE_DIR}/EventBoundDetect/3rdparty/*.h"
+	"${PROJECT_SOURCE_DIR}/EventBoundDetect/3rdparty/*.cpp"
 	)
 
 add_executable(EventBoundaryDetect ${src_list})
+target_link_libraries(EventBoundaryDetect ${LIBS})
 list(APPEND TARGETS EventBoundaryDetect
     )
 

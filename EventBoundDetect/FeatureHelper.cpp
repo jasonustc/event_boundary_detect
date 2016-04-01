@@ -1,11 +1,13 @@
 #include "FeatureHelper.h"
 #include "3rdparty\pugixml.hpp"
 #include <omp.h>
+#include <boost/filesystem.hpp>
 
 using std::string;
 using std::vector;
 using std::ostringstream;
 using namespace std;
+namespace fs=boost::filesystem;
 
 bool isVecEmpty(vector<float>& vec){
 	if (vec.size() == 0){
@@ -84,13 +86,13 @@ float GetSimOfTwoVecNorm(vector<float>& feat1, vector<float>& feat2,
 	}
 }
 
-void SaveImagesToFolder(const vector<Photo_Feature_Set>& photos, 
+void SaveImagesToFolder(const vector<Photo_Feature_Set>& photos,
 	vector<vector<int>>& images, const string& saveFolder){
-	if (_access(saveFolder.c_str(), 0) == -1){
-		_mkdir(saveFolder.c_str());
+	if (fs::exists(saveFolder.c_str()) == false) {
+		fs::create_directory(saveFolder.c_str());
 	}
 	ostringstream os;
-#pragma omp parallel for 
+#pragma omp parallel for
 	{
 		int i = 0;
 		int j = 0;
@@ -133,31 +135,31 @@ vector<string> split(const string& s, char delim){
 	return elems;
 }
 
-SYSTEMTIME String2SysTime(const string& str){
-	SYSTEMTIME sysTime = {0};
+struct tm String2SysTime(const string& str){
+	struct tm sysTime;
 	vector<string> subStrs = split(str, ':');
 	if (subStrs.size() != 6){
 		return sysTime;
 	}
 	std::istringstream iss;
 	iss.str(subStrs[0]);
-	iss >> sysTime.wYear;
+	iss >> sysTime.tm_year;
 	iss.clear();
 	iss.str(subStrs[1]);
-	iss >> sysTime.wMonth;
+	iss >> sysTime.tm_mon;
 	iss.clear();
 	iss.str(subStrs[2]);
-	iss >> sysTime.wDay;
+	iss >> sysTime.tm_mday;
 	iss.clear();
 	iss.str(subStrs[3]);
-	iss >> sysTime.wHour;
+	iss >> sysTime.tm_hour;
 	iss.clear();
 	iss.str(subStrs[4]);
 	iss.clear();
-	iss >> sysTime.wMinute;
+	iss >> sysTime.tm_min;
 	iss.clear();
 	iss.str(subStrs[5]);
-	iss >> sysTime.wSecond;
+	iss >> sysTime.tm_sec;
 	return sysTime;
 }
 
@@ -262,16 +264,14 @@ int LoadPhotoFromTxtFolder(string& folderPath, vector<Photo_Feature_Set>& photos
 	if (folderPath.size() == 0){
 		return -1;
 	}
-	vector<wstring> txtFiles;
-	wstring wFolderPath(folderPath.begin(), folderPath.end());
-	GetTxtFilesInDir(wFolderPath.c_str(), txtFiles);
-	for (size_t i = 0; i < txtFiles.size(); i++){
-		string path(txtFiles[i].begin(), txtFiles[i].end());
+	vector<string> txtFiles;
+	GetTxtFilesInDir(folderPath.c_str(), txtFiles);
+  for(const string& path: txtFiles) {
 		Photo_Feature_Set photo;
 		photo.LoadFeatFromTxt(path);
 		string photoPath(photo.tszFileName);
-		replaceStr(photoPath, "\\\\", "\\");
-		size_t n = std::count(photoPath.begin(),photoPath.end(),'\\');
+		replaceStr(photoPath, "\\\\", "/");
+		size_t n = std::count(photoPath.begin(),photoPath.end(),'/');
 		//only consider photos that is already segmented by user
 		if (n > 2){
 			photos.push_back(photo);
@@ -282,72 +282,23 @@ int LoadPhotoFromTxtFolder(string& folderPath, vector<Photo_Feature_Set>& photos
 }
 
 
-string SysTime2String(const SYSTEMTIME & sysTime){
+string SysTime2String(const struct tm & sysTime){
 	ostringstream oss;
-	oss << sysTime.wYear
-		<< ':' << sysTime.wMonth
-		<< ':' << sysTime.wDay
-		<< ' ' << sysTime.wHour
-		<< ':' << sysTime.wMinute
-		<< ':' << sysTime.wSecond;
+  oss << sysTime.tm_year
+    << ':' << sysTime.tm_mon
+		<< ':' << sysTime.tm_mday
+		<< ' ' << sysTime.tm_hour
+		<< ':' << sysTime.tm_min
+		<< ':' << sysTime.tm_sec;
 	return oss.str();
 }
 
-long SysTime2Long(const SYSTEMTIME& SysTime)
-{
-	long dSecond = 0;
-
-	int iYearOffset = SysTime.wYear - YEAR_OFFSET;
-	int iYear = SysTime.wYear;
-	int iMonth = SysTime.wMonth;
-	int iDay = SysTime.wDay;
-	int iHour = SysTime.wHour;
-	int iMin = SysTime.wMinute;
-	int iSec = SysTime.wSecond;
-
-	bool leapYear = ((iYear % 4 == 0 && iYear % 100 != 0) || iYear % 400 == 0);
-	int iDayPerYear = leapYear ? 366 : 365;
-
-	int iMonDays = 0;
-	for (int i = 1; i < iMonth; i++)
-	{
-		int iDayPerMon = 31;
-		switch (i)
-		{
-		case 1:
-		case 3:
-		case 5:
-		case 7:
-		case 8:
-		case 10:
-		case 12:
-			iDayPerMon = 31;
-			break;
-
-		case 2:
-			if (leapYear == true)
-			{
-				iDayPerMon = 29;
-			}
-			else
-			{
-				iDayPerMon = 28;
-			}
-			break;
-
-		default:
-			iDayPerMon = 30;
-		}
-		iMonDays += iDayPerMon;
-	}
-
-
-
-	dSecond =(iYearOffset * iDayPerYear * 24 * 60 + iMonDays * 24 * 60 + iDay * 24 * 60 + iHour * 60 + iMin) * 60 + iSec;
-	return dSecond;
+double SysTime2Long(const struct tm& SysTime) {
+  //to do: SysTime to long
+  return 0;
 }
 
-bool SavePhoto2EventAsXml(const vector<Photo_Feature_Set> &photos, const TCHAR* outFilePath) {
+bool SavePhoto2EventAsXml(const vector<Photo_Feature_Set> &photos, const char* outFilePath) {
 	pugi::xml_document doc;
 	pugi::xml_node root_node = doc.append_child("Photo2Event");
 	root_node.append_attribute("descr").set_value("Photo Information");
@@ -374,7 +325,7 @@ bool SavePhoto2EventAsXml(const vector<Photo_Feature_Set> &photos, const TCHAR* 
 	return true;
 }
 
-bool SavePhoto2EventAsText(const vector<Photo_Feature_Set> &photos, const TCHAR* outFilePath) {
+bool SavePhoto2EventAsText(const vector<Photo_Feature_Set> &photos, const char* outFilePath) {
 	ofstream outFile(outFilePath, ios::out);
 	if (!outFile){
 		cerr << "Open or create file " << outFilePath << " failed!" << endl;
@@ -397,14 +348,14 @@ bool SavePhoto2EventAsText(const vector<Photo_Feature_Set> &photos, const TCHAR*
 
 }
 
-bool SaveEvent2PhotosAsXml(const vector<vector<int>> eventIdx, const vector<Photo_Feature_Set> &photos, const TCHAR* outFilePath) {
+bool SaveEvent2PhotosAsXml(const vector<vector<int>> eventIdx, const vector<Photo_Feature_Set> &photos, const char* outFilePath) {
 	pugi::xml_document doc;
 	pugi::xml_node root_node = doc.append_child("Event2Photos");
 	root_node.append_attribute("descr").set_value("Event Information");
 
 	for (size_t i = 0; i < eventIdx.size(); ++i){
 		pugi::xml_node event_node = root_node.append_child("Event");
-		event_node.append_attribute("id").set_value(i);
+		event_node.append_attribute("id").set_value(int(i));
 		for (auto photo_iter = eventIdx[i].begin(); photo_iter != eventIdx[i].end(); ++photo_iter){
 			pugi::xml_node photo_node = event_node.append_child("Photo");
 			int photo_id = *photo_iter;
@@ -428,7 +379,7 @@ bool SaveEvent2PhotosAsXml(const vector<vector<int>> eventIdx, const vector<Phot
 	return true;
 }
 
-bool SaveEvent2PhotosAsText(const vector<vector<int>> eventIdx, const vector<Photo_Feature_Set> &photos, const TCHAR* outFilePath) {
+bool SaveEvent2PhotosAsText(const vector<vector<int>> eventIdx, const vector<Photo_Feature_Set> &photos, const char* outFilePath) {
 	ofstream outFile(outFilePath, ios::out);
 	if (!outFile){
 		cerr << "Open or create file " << outFilePath << " failed!" << endl;

@@ -2,13 +2,15 @@
 //
 // Author: Wangke
 // Last update: 12/27/2004
-// 
+//
 //////////////////////////////////////////////////////////////////////
 
 #include "stdafx.h"
 #include "PVImageInfo.h"
 #include <stdio.h>
 #include <tchar.h>
+
+#include "FolderFileHelper.h"
 
 //-----------------const value for reading JPEG file-------------------------
 int const IMGINFO_LENGTH = 8192;
@@ -67,9 +69,9 @@ CPVImageInfo::CPVImageInfo()
 	m_uThumbLength = 0;
 	m_uThumbWidth = 0;
 	m_uThumbHeight = 0;
-	m_stTakenDateTime.wDay = m_stTakenDateTime.wDayOfWeek = m_stTakenDateTime.wHour =
-		m_stTakenDateTime.wMilliseconds = m_stTakenDateTime.wMinute = m_stTakenDateTime.wMonth =
-		m_stTakenDateTime.wSecond = m_stTakenDateTime.wYear = 0;
+	m_stTakenDateTime.tm_mday = m_stTakenDateTime.tm_wday = m_stTakenDateTime.tm_hour =
+		m_stTakenDateTime.tm_min = m_stTakenDateTime.tm_mon =
+		m_stTakenDateTime.tm_sec = m_stTakenDateTime.tm_year = 0;
 }
 
 /*--------------------------------------------------------------------
@@ -102,9 +104,9 @@ ptszImgFile: JPEG file name
 return:
 StatusCode
 */
-StatusCode CPVImageInfo::SetImageFile(char *ptszImgFile)
+StatusCode CPVImageInfo::SetImageFile(const char *ptszImgFile)
 {
-	_tcscpy_s(m_tszFileName, ptszImgFile);
+	strcpy(m_tszFileName, ptszImgFile);
 
 	//create a buffer to load file data into memory
 	if (NULL == m_pbImgInfo)
@@ -114,76 +116,39 @@ StatusCode CPVImageInfo::SetImageFile(char *ptszImgFile)
 
 	if (NULL == m_pbImgInfo)
 	{
-		return E_OUTOFMEMORY;
+		return StatusCode::OutOfMemory;
 	}
 
 	//open the file and read header info to buffer
-	HANDLE hFile = CreateFile(ptszImgFile,
-		GENERIC_READ,
-		0,
-		NULL,
-		OPEN_EXISTING,
-		FILE_ATTRIBUTE_NORMAL,
-		0);
-
-	if (INVALID_HANDLE_VALUE == hFile)
-	{
-		return E_FAIL;
+  FILE* hFile = fopen(ptszImgFile, "rb");
+	if (nullptr == hFile) return StatusCode::Error;
+  DWORD dwBytesRead;
+	if ((dwBytesRead = fread(m_pbImgInfo, 1, IMGINFO_LENGTH, hFile)) < IMGINFO_LENGTH) {
+    fclose(hFile);
+		return StatusCode::Error;
 	}
-
-	DWORD dwBytesRead;
-	if ((0 == ReadFile(hFile,
-		m_pbImgInfo,
-		IMGINFO_LENGTH,
-		&dwBytesRead,
-		NULL)) ||
-		(dwBytesRead < IMGINFO_LENGTH)
-		)
-	{
-		CloseHandle(hFile);
-		return E_FAIL;
-	}
-	CloseHandle(hFile);
+  fclose(hFile);
 
 	//get information of this file
 	StatusCode hRlt = GetExifInfo();
 	// if (S_OK != hRlt)				// Modified by Tao Mei
-	if ((m_stTakenDateTime.wDay == 0) && (m_stTakenDateTime.wHour == 0)
-		&& (m_stTakenDateTime.wMinute == 0) && (m_stTakenDateTime.wSecond == 0))
+	if ((m_stTakenDateTime.tm_mday == 0) && (m_stTakenDateTime.tm_hour == 0)
+		&& (m_stTakenDateTime.tm_min == 0) && (m_stTakenDateTime.tm_sec == 0))
 	{
-		// GetSystemTime(&m_stTakenDateTime);		    // Original: Ke Wang
-		// GetFileCreationTime(m_stTakenDateTime);		// Modified: Tao Mei
-
-		WIN32_FIND_DATA wfd;
-		HANDLE hFile = FindFirstFile(ptszImgFile, &wfd);
-		if (INVALID_HANDLE_VALUE != hFile)
-		{
-			// Tao Mei
-			// FileTimeToSystemTime(&wfd.ftCreationTime, &m_stTakenDateTime);
-			// FileTimeToSystemTime(&wfd.ftLastAccessTime, &m_stTakenDateTime);
-			FileTimeToSystemTime(&wfd.ftLastWriteTime, &m_stTakenDateTime);
-			FindClose(hFile);
-		}
-
+    time_t last_modify_time = LastWriteTime(ptszImgFile);
+    m_stTakenDateTime = *gmtime(&last_modify_time);
 		//Get image's width and height from SOF0
 		return GetResolution(m_uImageWidth, m_uImageHeight);
 	}
 
 	//open the file and read header info to buffer
-	FILE *fp = NULL;	
-	if (EINVAL == _tfopen_s(&fp, ptszImgFile, _T("rb")))
-	{
-		return E_FAIL;
-	}
-	if (fp == NULL)
-	{
-		return E_FAIL;
-	}
+	FILE *fp = nullptr;
+	if ((fp = fopen(ptszImgFile, "rb")) == nullptr)  return StatusCode::Error;
 	fseek(fp, m_u1IFDOffset, SEEK_SET);
 	fread(m_pbImgInfo, 1, IMGINFO_LENGTH, fp);
 	fclose(fp);
 
-	if (S_OK != GetThumbInfo())
+	if (StatusCode::OK != GetThumbInfo())
 	{
 		m_uThumbOffset = 0;
 		m_uThumbLength = 0;
@@ -191,7 +156,7 @@ StatusCode CPVImageInfo::SetImageFile(char *ptszImgFile)
 		m_uThumbHeight = 0;
 	}
 
-	return S_OK;
+	return StatusCode::OK;
 }
 
 /*--------------------------------------------------------------------
@@ -204,10 +169,10 @@ pst: [out] the taken time
 return:
 StatusCode
 */
-StatusCode CPVImageInfo::GetDTOrig(SYSTEMTIME *pst) const
+StatusCode CPVImageInfo::GetDTOrig(struct tm *pst) const
 {
 	*pst = m_stTakenDateTime;
-	return S_OK;
+	return StatusCode::OK;
 }
 
 /*--------------------------------------------------------------------
@@ -221,7 +186,7 @@ pst: [out] the converted datetime
 return:
 StatusCode
 */
-StatusCode CPVImageInfo::ExifDTToDateTime(char *pszExifDT, SYSTEMTIME *pst)
+StatusCode CPVImageInfo::ExifDTToDateTime(const char *pszExifDT, struct tm *pst)
 {
 	enum euDateTime
 	{
@@ -235,80 +200,82 @@ StatusCode CPVImageInfo::ExifDTToDateTime(char *pszExifDT, SYSTEMTIME *pst)
 
 	int const EUDATE_SIZE = 6;
 
-	if (NULL == pszExifDT)
+	if (nullptr == pszExifDT)
 	{
-		return E_POINTER;
+		return StatusCode::PointerError;
 	}
 
 	char *pszSpace = NULL;
 
-	if (NULL != (pszSpace = StrChr(pszExifDT, _T(' '))))
+	if (nullptr != (pszSpace = strchr(pszExifDT, ' ')))
 	{
-		*pszSpace = _T(':');
+		*pszSpace = ':';
 	}
-	char *next_token;
-	char *ptszSeps = _T(":");
-	char *ptszToken = _tcstok_s(pszExifDT, ptszSeps, &next_token);
+	const char *ptszToken = pszExifDT;
 	int  iCount = 0;
 
-	while ((NULL != ptszToken) && (iCount < EUDATE_SIZE))
+  string::size_type sz = 0;
+
+	while ((*ptszToken != '\0') && (iCount < EUDATE_SIZE))
 	{
-		int i = _ttol(ptszToken);
+    if (*ptszToken == ':') ++ptszToken;
+		int i = stoi(ptszToken, &sz);
+
 		/* While there are tokens in "string" */
 		switch (iCount++)
-		{
-		case Year:
-		{
-					 pst->wYear = i;
-					 break;
-		}
+    {
+      case Year:
+        {
+          pst->tm_year = i;
+          break;
+        }
 
-		case Month:
-		{
-					  pst->wMonth = i;
-					  break;
-		}
+      case Month:
+        {
+          pst->tm_mon = i;
+          break;
+        }
 
-		case Day:
-		{
-					pst->wDay = i;
-					break;
-		}
+      case Day:
+        {
+          pst->tm_mday = i;
+          break;
+        }
 
-		case Hour:
-		{
-					 pst->wHour = i;
-					 break;
-		}
+      case Hour:
+        {
+          pst->tm_hour = i;
+          break;
+        }
 
-		case Minute:
-		{
-					   pst->wMinute = i;
-					   break;
-		}
+      case Minute:
+        {
+          pst->tm_min = i;
+          break;
+        }
 
-		case Second:
-		{
-					   pst->wSecond = i;
-					   break;
-		}
+      case Second:
+        {
+          pst->tm_sec = i;
+          break;
+        }
 
-		default:
-			;
-		}
+      default:
+        break;
+    }
 
 		/* Get next token: */
-		ptszToken = _tcstok_s(NULL, ptszSeps, &next_token);
+		ptszToken += sz;
 	}
 
-	if ((NULL == ptszToken) && (iCount == EUDATE_SIZE))
+	if ((nullptr == ptszToken) && (iCount == EUDATE_SIZE))
 	{
-		return S_OK;
+		return StatusCode::OK;
 	}
 	else
 	{
-		ZeroMemory(pst, sizeof(SYSTEMTIME));
-		return E_FAIL;
+		memset(pst, 0, sizeof(struct tm));
+		return StatusCode::Error;
 	}
 }
 
@@ -345,7 +312,7 @@ StatusCode CPVImageInfo::GetExifInfo()
 
 	if (NULL == m_pbImgInfo)
 	{
-		return E_POINTER;
+		return StatusCode::PointerError;
 	}
 
 	//1.Check image info
@@ -353,14 +320,14 @@ StatusCode CPVImageInfo::GetExifInfo()
 	if ((m_pbImgInfo[0] != 0xFF) || (m_pbImgInfo[1] != 0xD8))
 	{
 		//The file does not contain SOI marker
-		return E_UNEXPECTED;
+		return StatusCode::Error;
 	}
 	//check whethe APP0 marker exists(JFIF Section)
 	if ((0xFF == m_pbImgInfo[2]) && (0xE0 == m_pbImgInfo[3]))
 	{
 		//JFIF Section Exists, then read its field length
 		m_fBigEdian = true;
-		if (S_OK != (hRlt = GetUShort(4, usRlt)))
+		if (StatusCode::OK != (hRlt = GetUShort(4, usRlt)))
 		{
 			return hRlt;
 		}
@@ -374,7 +341,7 @@ StatusCode CPVImageInfo::GetExifInfo()
 	//check APP1 marker
 	if ((iPos < 0) || (iPos + 7 >= IMGINFO_LENGTH))
 	{
-		return E_FAIL;
+		return StatusCode::Error;
 	}
 
 	//APP1 Marker
@@ -384,14 +351,14 @@ StatusCode CPVImageInfo::GetExifInfo()
 	{
 		//The file does not contain APP1 marker
 
-		return E_UNEXPECTED;
+		return StatusCode::Error;
 	}
 
 	//2.read tiff header to get 0th IFD's iOffset
 	m_iTiffOffset = iPos + 0x0A;  //attribute information
 	if ((m_iTiffOffset < 0) || (m_iTiffOffset >= IMGINFO_LENGTH))
 	{
-		return E_FAIL;
+		return StatusCode::Error;
 	}
 
 	if (0x49 == m_pbImgInfo[m_iTiffOffset])
@@ -405,10 +372,10 @@ StatusCode CPVImageInfo::GetExifInfo()
 	else
 	{
 		//The TIFF header does not contain byte order of 0th IFD data
-		return E_UNEXPECTED;
+		return StatusCode::Error;
 	}
 
-	if (S_OK != (hRlt = GetUShort(m_iTiffOffset + 2, usRlt)))
+	if (StatusCode::OK != (hRlt = GetUShort(m_iTiffOffset + 2, usRlt)))
 	{
 		return hRlt;
 	}
@@ -416,17 +383,17 @@ StatusCode CPVImageInfo::GetExifInfo()
 	if (42 != (int)usRlt)
 	{
 		//The TIFF header does not contain '42' field
-		return E_UNEXPECTED;
+		return StatusCode::Error;
 	}
 
-	if (S_OK != (hRlt = GetUInt(m_iTiffOffset + 4, uIFDOffset)))
+	if (StatusCode::OK != (hRlt = GetUInt(m_iTiffOffset + 4, uIFDOffset)))
 	{
 		return hRlt;
 	}
 
 	//3.read the 0th IFD to get exif IFD
 	hRlt = GetUShort(m_iTiffOffset + (int)uIFDOffset, us0thIFDFld);
-	if (S_OK != hRlt)
+	if (StatusCode::OK != hRlt)
 	{
 		return hRlt;
 	}
@@ -435,14 +402,14 @@ StatusCode CPVImageInfo::GetExifInfo()
 	uExifOffset = 0;
 	for (i = 0; i < us0thIFDFld; i++)
 	{
-		if (S_OK != (hRlt = GetUShort(iPos, usRlt)))
+		if (StatusCode::OK != (hRlt = GetUShort(iPos, usRlt)))
 		{
 			return hRlt;
 		}
 
 		if (PROPERTYTAG_EXIFPTR == usRlt)
 		{
-			if (S_OK != (hRlt = GetUInt(iPos + 8, uExifOffset)))
+			if (StatusCode::OK != (hRlt = GetUInt(iPos + 8, uExifOffset)))
 			{
 				return hRlt;
 			}
@@ -451,10 +418,10 @@ StatusCode CPVImageInfo::GetExifInfo()
 		}
 
 		iPos += TAG_LENGTH;
-	}//for    
+	}//for
 
 	//get the 1st IFD offset
-	if (S_OK == GetUInt(iPos, m_u1IFDOffset))
+	if (StatusCode::OK == GetUInt(iPos, m_u1IFDOffset))
 	{
 		m_u1IFDOffset += m_iTiffOffset;
 	}
@@ -462,12 +429,12 @@ StatusCode CPVImageInfo::GetExifInfo()
 	if (uExifOffset <= (unsigned)m_iTiffOffset)
 	{
 		//The Exif iOffset is error
-		return E_UNEXPECTED;
+		return StatusCode::Error;
 	}
 
 	//4.read the exif IFD
 	hRlt = GetUShort(m_iTiffOffset + (int)uExifOffset, usExifIFDFld);
-	if (S_OK != hRlt)
+	if (StatusCode::OK != hRlt)
 	{
 		return hRlt;
 	}
@@ -475,22 +442,22 @@ StatusCode CPVImageInfo::GetExifInfo()
 	iPos = m_iTiffOffset + (int)uExifOffset + 2;
 	for (i = 0; i < usExifIFDFld; ++i)
 	{
-		if (S_OK != (hRlt = GetUShort(iPos, imgPropItem.usTag)))
+		if (StatusCode::OK != (hRlt = GetUShort(iPos, imgPropItem.usTag)))
 		{
 			return hRlt;
 		}
 
-		if (S_OK != (hRlt = GetUShort(iPos + 2, imgPropItem.usType)))
+		if (StatusCode::OK != (hRlt = GetUShort(iPos + 2, imgPropItem.usType)))
 		{
 			return hRlt;
 		}
 
-		if (S_OK != (hRlt = GetUInt(iPos + 4, imgPropItem.uCount)))
+		if (StatusCode::OK != (hRlt = GetUInt(iPos + 4, imgPropItem.uCount)))
 		{
 			return hRlt;
 		}
 
-		if (S_OK != (hRlt = GetUInt(iPos + 8, imgPropItem.uOffset)))
+		if (StatusCode::OK != (hRlt = GetUInt(iPos + 8, imgPropItem.uOffset)))
 		{
 			return hRlt;
 		}
@@ -503,12 +470,12 @@ StatusCode CPVImageInfo::GetExifInfo()
 			hRlt = GetString(imgPropItem.uOffset + m_iTiffOffset,
 				imgPropItem.uCount,
 				szStr);
-			if (S_OK == hRlt)
+			if (StatusCode::OK == hRlt)
 			{
 				hRlt = ExifDTToDateTime(szStr, &m_stTakenDateTime);
 			}
 
-			if (S_OK != hRlt)
+			if (StatusCode::OK != hRlt)
 			{
 				return hRlt;
 			}
@@ -534,7 +501,7 @@ StatusCode CPVImageInfo::GetExifInfo()
 	}
 	else
 	{
-		return S_OK;
+		return StatusCode::OK;
 	}
 }
 
@@ -553,7 +520,7 @@ StatusCode CPVImageInfo::GetUInt(int iOffset, DWORD &refuRlt) const
 {
 	if ((iOffset < 0) || (iOffset + 3 >= IMGINFO_LENGTH))
 	{
-		return E_INVALIDARG;
+		return StatusCode::InvalidArgs;
 	}
 
 	if (m_fBigEdian)
@@ -571,7 +538,7 @@ StatusCode CPVImageInfo::GetUInt(int iOffset, DWORD &refuRlt) const
 			((DWORD)m_pbImgInfo[iOffset + 3] << 24);
 	}
 
-	return S_OK;
+	return StatusCode::OK;
 }
 
 /*--------------------------------------------------------------------
@@ -589,7 +556,7 @@ StatusCode CPVImageInfo::GetUShort(int iOffset, WORD &refusRlt) const
 {
 	if ((iOffset < 0) || (iOffset + 1 >= IMGINFO_LENGTH))
 	{
-		return E_INVALIDARG;
+		return StatusCode::InvalidArgs;
 	}
 
 	if (m_fBigEdian)
@@ -603,7 +570,7 @@ StatusCode CPVImageInfo::GetUShort(int iOffset, WORD &refusRlt) const
 			((DWORD)m_pbImgInfo[iOffset + 1] << 8));
 	}
 
-	return S_OK;
+	return StatusCode::OK;
 }
 
 /*--------------------------------------------------------------------
@@ -622,12 +589,12 @@ StatusCode CPVImageInfo::GetString(int iOffset, int iCount, char *pszStr) const
 {
 	if (NULL == pszStr)
 	{
-		return E_POINTER;
+		return StatusCode::PointerError;
 	}
 
 	if ((iOffset < 0) || (iOffset + iCount >= IMGINFO_LENGTH))
 	{
-		return E_INVALIDARG;
+		return StatusCode::InvalidArgs;
 	}
 	int i;
 	for (i = 0; i < iCount; ++i)
@@ -636,7 +603,7 @@ StatusCode CPVImageInfo::GetString(int iOffset, int iCount, char *pszStr) const
 	}
 
 	pszStr[i] = _T('\0');
-	return S_OK;
+	return StatusCode::OK;
 }
 
 /*--------------------------------------------------------------------
@@ -685,10 +652,10 @@ StatusCode CPVImageInfo::GetThumbInfo()
 {
 	WORD    nFld;
 	int     iPos = 0;
-	StatusCode hRlt = S_OK;
+	StatusCode hRlt = StatusCode::OK;
 
 	//Get thumbnail's offset and length
-	if (S_OK != (hRlt = GetUShort(iPos, nFld)))
+	if (StatusCode::OK != (hRlt = GetUShort(iPos, nFld)))
 	{
 		return hRlt;
 	}
@@ -699,7 +666,7 @@ StatusCode CPVImageInfo::GetThumbInfo()
 	{
 		WORD uData;
 
-		if (S_OK != (hRlt = GetUShort(iPos, uData)))
+		if (StatusCode::OK != (hRlt = GetUShort(iPos, uData)))
 		{
 			return hRlt;
 		}
@@ -708,7 +675,7 @@ StatusCode CPVImageInfo::GetThumbInfo()
 		{
 		case PROPERTYTAG_THUMBOFFSET:
 		{
-										if (S_OK != (hRlt = GetUInt(iPos + 8, m_uThumbOffset)))
+										if (StatusCode::OK != (hRlt = GetUInt(iPos + 8, m_uThumbOffset)))
 										{
 											return hRlt;
 										}
@@ -718,7 +685,7 @@ StatusCode CPVImageInfo::GetThumbInfo()
 
 		case PROPERTYTAG_THUMBLENGTH:
 		{
-										if (S_OK != (hRlt = GetUInt(iPos + 8, m_uThumbLength)))
+										if (StatusCode::OK != (hRlt = GetUInt(iPos + 8, m_uThumbLength)))
 										{
 											return hRlt;
 										}
@@ -735,7 +702,7 @@ StatusCode CPVImageInfo::GetThumbInfo()
 	//Get thumbnail's width and height from SOF0
 	GetResolution(m_uThumbWidth, m_uThumbHeight);
 
-	return S_OK;
+	return StatusCode::OK;
 }
 
 
@@ -774,14 +741,14 @@ StatusCode
 StatusCode CPVImageInfo::GetResolution(WORD &uWidth, WORD &uHeight)
 {
 	int     iPos = IMGINFO_LENGTH - sizeof(WORD);
-	StatusCode hRlt = S_OK;
+	StatusCode hRlt = StatusCode::OK;
 	WORD    wTag;
 
 	m_fBigEdian = true;
 
 	while (iPos >= 0)
 	{
-		if (S_OK != (hRlt = GetUShort(iPos, wTag)))
+		if (StatusCode::OK != (hRlt = GetUShort(iPos, wTag)))
 		{
 			return hRlt;
 		}
@@ -800,12 +767,12 @@ StatusCode CPVImageInfo::GetResolution(WORD &uWidth, WORD &uHeight)
 			(wTag == SOF14) ||
 			(wTag == SOF15))
 		{
-			if (S_OK != (hRlt = GetUShort(iPos + SOF_IMGWIDTH_OFFSET, uWidth)))
+			if (StatusCode::OK != (hRlt = GetUShort(iPos + SOF_IMGWIDTH_OFFSET, uWidth)))
 			{
 				return hRlt;
 			}
 
-			if (S_OK != (hRlt = GetUShort(iPos + SOF_IMGHEIGHT_OFFSET, uHeight)))
+			if (StatusCode::OK != (hRlt = GetUShort(iPos + SOF_IMGHEIGHT_OFFSET, uHeight)))
 			{
 				return hRlt;
 			}
@@ -819,25 +786,5 @@ StatusCode CPVImageInfo::GetResolution(WORD &uWidth, WORD &uHeight)
 		--iPos;
 	}
 
-	return S_OK;
-}
-
-StatusCode CPVImageInfo::GetFileCreationTime(SYSTEMTIME &SysTime)
-{
-	StatusCode hr = S_OK;
-
-	WIN32_FIND_DATA FindFileData;
-	HANDLE hd = FindFirstFile(m_tszFileName, &FindFileData);
-	if (INVALID_HANDLE_VALUE != hd)
-	{
-		FileTimeToSystemTime(&FindFileData.ftCreationTime, &SysTime);
-		//		FileTimeToSystemTime(&FindFileData.ftLastWriteTime, &SysTime);
-	}
-	else
-	{
-		printf("\nError: Find file creation time failed!\n");
-		return E_FAIL;
-	}
-
-	return hr;
+	return StatusCode::OK;
 }

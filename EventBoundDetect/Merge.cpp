@@ -3,20 +3,19 @@
 #include "Cluster.h"
 #include "FeatureHelper.h"
 
-
 int GetDayInfoInCollection(vector<Photo_Feature_Set>& photos){
 	int days = 0;
 	vector<bool> is_assigned(photos.size(), false);
 	for (size_t i = 0; i < photos.size(); i++){
 		if (is_assigned[i] == false){
 			is_assigned[i] = true;
-			WORD day_time_i = photos[i].SysTime.wDay;
-			WORD year_time_i = photos[i].SysTime.wYear;
-			WORD month_time_i = photos[i].SysTime.wMonth;
+			WORD day_time_i = photos[i].SysTime.tm_mday;
+			WORD year_time_i = photos[i].SysTime.tm_year;
+			WORD month_time_i = photos[i].SysTime.tm_mon;
 			for (size_t j = i; j < photos.size(); j++){
-				WORD day_time_j = photos[j].SysTime.wDay;
-				WORD month_time_j = photos[j].SysTime.wMonth;
-				WORD year_time_j = photos[j].SysTime.wYear;
+				WORD day_time_j = photos[j].SysTime.tm_mday;
+				WORD month_time_j = photos[j].SysTime.tm_mon;
+				WORD year_time_j = photos[j].SysTime.tm_year;
 				if (day_time_i == day_time_j && month_time_i == month_time_j && year_time_i == year_time_j){
 					is_assigned[j] = true;
 					photos[j].day_id = days;
@@ -71,51 +70,20 @@ bool AssignPhotos2Event(vector<Photo_Feature_Set>& photos, int days, InputConfig
 	}
 
 	//copy photos to folder by event
-	string outfolder(inputCfg.tszOutImageDir.begin(), inputCfg.tszOutImageDir.end());
-	DWORD ftyp = GetFileAttributesA(outfolder.c_str());
-	if (ftyp == INVALID_FILE_ATTRIBUTES)
-	{
-		_mkdir(outfolder.c_str());
-	}
-	for (size_t i = 0; i < numEvents; i++)
-	{
+	string outfolder= inputCfg.tszOutImageDir;
+  MakeDir(outfolder);
+	for (size_t i = 0; i < numEvents; i++) {
 		stringstream ss;
 		string s;
 		ss << i;
 		ss >> s;
-		string newimgfolder = outfolder + "\\" + s + "\\";
-		ftyp = GetFileAttributesA(newimgfolder.c_str());
-		if (ftyp == INVALID_FILE_ATTRIBUTES)
-		{
-			_mkdir(newimgfolder.c_str());
-		}
-		for (size_t j = 0; j <photos.size(); j++)
-		{
-			if (photos[j].iEventLabel == i)
-			{
-				string oriImgPath = photos[j].tszFileName;
-				string newImgPath = newimgfolder + oriImgPath.substr(oriImgPath.rfind("\\") + 1,
-					oriImgPath.length());
-				if (!copyfile(oriImgPath, newImgPath))
-				{
-					continue;
-				}
+    string newimgfolder;
+    MakeSubFolder(outfolder, s, newimgfolder);
+		for (size_t j = 0; j <photos.size(); j++) {
+			if (photos[j].iEventLabel == i) {
+        CopyFileToFolder(photos[j].tszFileName, newimgfolder);
 			}
 		}
 	}
 	return true;
-}
-
-int copyfile(string initialFilePath, string outputFilePath)
-{
-	DWORD ftyp = GetFileAttributesA(initialFilePath.c_str());
-	if (!ftyp == INVALID_FILE_ATTRIBUTES)
-	{
-		cout << "File exists!" << endl;
-		return 1;
-	}
-	std::ifstream  src(initialFilePath.c_str(), std::ios::binary);
-	std::ofstream  dst(outputFilePath.c_str(), std::ios::binary);
-	dst << src.rdbuf();
-	return 0;
 }

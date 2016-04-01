@@ -9,7 +9,7 @@ using namespace std;
 CCluster::CCluster(vector<Photo_Feature_Set> &m_vecPhotos)
 {
     for(unsigned int i=0;i<m_vecPhotos.size();i++){
-        double dTime = this->GetSecondTime(m_vecPhotos[i].SysTime);
+        double dTime = this->GetSecondTime(&(m_vecPhotos[i].SysTime));
         m_vecPhotos[i].dTimeStamp = dTime;
 	}
 	this->m_vecPhoto = m_vecPhotos;
@@ -33,63 +33,15 @@ void CCluster::GetPhotoFeatures(vector<Photo_Feature_Set> &photos)
 }
 
 //transform system time into absolute time
-double CCluster::GetSecondTime(IN SYSTEMTIME SysTime)
+double CCluster::GetSecondTime(struct tm* SysTime)
 {
-	double dSecond = 0;
-
-	int iYearOffset = SysTime.wYear - YEAR_OFFSET;
-	int iYear = SysTime.wYear;
-	int iMonth = SysTime.wMonth;
-	int iDay = SysTime.wDay;
-	int iHour = SysTime.wHour;
-	int iMin = SysTime.wMinute;
-	int iSec = SysTime.wSecond;
-
-	bool leapYear = ((iYear % 4 == 0 && iYear % 100 != 0) || iYear % 400 == 0 );
-	int iDayPerYear = leapYear ? 366 : 365;
-
-	int iMonDays = 0;
-	for (int i = 1; i < iMonth; i++)
-	{
-		int iDayPerMon = 31;
-		switch (i)
-		{
-			case 1:
-			case 3:
-			case 5:
-			case 7:
-			case 8:
-			case 10:
-			case 12:
-				iDayPerMon = 31;
-			break;
-
-		case 2:
-			if (leapYear == true)
-			{
-				iDayPerMon = 29;
-			}
-			else
-			{
-				iDayPerMon = 28;
-			}
-			break;
-
-		default:
-			iDayPerMon = 30;
-		}
-		iMonDays += iDayPerMon;
-	}
-
-	//convert to minutes
-	dSecond = double(iYearOffset * iDayPerYear * 24 * 60 + iMonDays * 24 * 60 + iDay * 24 * 60 + iHour * 60 + iMin) + iSec / 60.0;
-	return dSecond;
+  return mktime(SysTime);
 }
 
 //Set the initial number of event
-HRESULT CCluster::Preprocess()
+StatusCode CCluster::Preprocess()
 {
-	HRESULT hr = S_OK;
+	StatusCode hr = StatusCode::OK;
 	int i = 0, j = 0;
 	double dStartTime = 0, dEndTime = 0, dInterval = 0;
 
@@ -99,7 +51,7 @@ HRESULT CCluster::Preprocess()
 
 	if (m_iN <= 0)
 	{
-		return E_FAIL;
+		return StatusCode::Error;
 	}
 	this->SortPhotos();
 	dStartTime = m_vecPhoto[0].dTimeStamp;
@@ -107,10 +59,10 @@ HRESULT CCluster::Preprocess()
 	for (unsigned int i = 0; i<m_vecPhoto.size(); i++){
 		m_vecPhoto[i].dTimeStamp = (m_vecPhoto[i].dTimeStamp - dTime0) / TIME_INTERVAL;
 	}
-	m_vecPhoto[0].fRep = FALSE;
+	m_vecPhoto[0].fRep = false;
 	for (i = 1; i < m_iN; i++)
 	{
-		m_vecPhoto[i].fRep = FALSE;//mark of best photo
+		m_vecPhoto[i].fRep = false;//mark of best photo
 		// calculate the number of scene
 		dEndTime = m_vecPhoto[i].dTimeStamp;
 		dInterval = (dEndTime - dStartTime);
@@ -125,7 +77,7 @@ HRESULT CCluster::Preprocess()
 
 	if (m_pBestLabel_MDL == NULL)
 	{
-		hr = E_OUTOFMEMORY;
+		hr = StatusCode::OutOfMemory;
 	}
 	//max events a day is set to 4
 	iTotalEvent = m_iInitK * MAX_EVENTS_PERDAY;
@@ -142,14 +94,14 @@ HRESULT CCluster::Preprocess()
 }
 
 //get K_min and K_min based on the photo density of current day and global photo density
-HRESULT CCluster::PreprocessNew()
+StatusCode CCluster::PreprocessNew()
 {
-	HRESULT hr = S_OK;
+	StatusCode hr = StatusCode::OK;
 	int i = 0, j = 0;
 
 	if (m_iN <= 0)
 	{
-		return E_FAIL;
+		return StatusCode::Error;
 	}
 	//sort in time order
     this->SortPhotos();
@@ -178,9 +130,9 @@ void CCluster::SortPhotos()
 	std::sort(m_vecPhoto.begin(), m_vecPhoto.end(), timeComperer());
 }
 
-HRESULT CCluster::Clustering(bool use_gps)
+StatusCode CCluster::Clustering(bool use_gps)
 {
-	HRESULT hr = S_OK;
+	StatusCode hr = StatusCode::OK;
 	Mat samples;
 	// 0.1 Preprocess data.
 	hr = Preprocess();
@@ -208,7 +160,7 @@ HRESULT CCluster::Clustering(bool use_gps)
 }
 
 //load time features of photos
-HRESULT CCluster::LoadFeatures(Mat &samples, bool use_gps){
+StatusCode CCluster::LoadFeatures(Mat &samples, bool use_gps){
 	if (use_gps){
 		samples = Mat::zeros(cv::Size(TIME_FEATURE_DIM + GPS_FEATURE_DIM, m_vecPhoto.size()), CV_32FC1);
 		for (unsigned int i = 0; i < m_vecPhoto.size(); i++){
@@ -227,11 +179,11 @@ HRESULT CCluster::LoadFeatures(Mat &samples, bool use_gps){
 			samples.at<float>(i) = (float)m_vecPhoto[i].dTimeStamp;
 		}
 	}
-	return S_OK;
+	return StatusCode::OK;
 }
 
 //EM training
-HRESULT CCluster::EMtraining(Mat & Samples, bool use_gps){
+StatusCode CCluster::EMtraining(Mat & Samples, bool use_gps){
 	TermCriteria Termination;
 	Termination.type = CV_TERMCRIT_ITER | CV_TERMCRIT_EPS;
 	Mat logLikelihoods, labels, Probs;
@@ -242,7 +194,7 @@ HRESULT CCluster::EMtraining(Mat & Samples, bool use_gps){
 	float currCost = 0, bestCost = FLT_MAX;
 	for (m_iK = m_iInitK; m_iK < iTotalEvent /*m_iInitK + 1*/ ; m_iK += EVENT_STEP)
 	{
-		printf_s("Event iteration: %d\n", m_iK);
+		printf("Event iteration: %d\n", m_iK);
 		EM em(m_iK, cv::EM::COV_MAT_SPHERICAL, Termination);
 		try
 		{
@@ -250,11 +202,11 @@ HRESULT CCluster::EMtraining(Mat & Samples, bool use_gps){
 		}
 		catch (...)
 		{
-			return E_FAIL;
+			return StatusCode::Error;
 		}
 		if (trainSucc == false)
 		{
-			return E_FAIL;
+			return StatusCode::Error;
 		}
 		m_flCurrML = sum(logLikelihoods)[0]; // calculate the Maximum Likelihood
 		std::printf("\nround %d, loglikelihood %f,\n", m_iK, m_flCurrML);
@@ -285,13 +237,13 @@ HRESULT CCluster::EMtraining(Mat & Samples, bool use_gps){
 		}
 		m_flPrevCost_MDL = m_flCurrCost_MDL;
 	}
-	printf_s("Event iteration finish\n");
-	printf_s("with %d sub-events in the final model.\n",m_iBestK_MDL);
-	return S_OK;
+	printf("Event iteration finish\n");
+	printf("with %d sub-events in the final model.\n",m_iBestK_MDL);
+	return StatusCode::OK;
 }
 
 //Index photos by sub event
-HRESULT CCluster::BuildIndex()
+StatusCode CCluster::BuildIndex()
 {
 	m_iBestK_MDL = m_vecPhoto[m_vecPhoto.size() - 1].iEventLabel + 1;
 	this->indexOfEventPhotos.clear();
@@ -304,11 +256,11 @@ HRESULT CCluster::BuildIndex()
 		this->indexOfEventPhotos[m_vecPhoto[i].iEventLabel].push_back(i);
 
 	}
-    return S_OK;
+    return StatusCode::OK;
 }
 
 //Merge the event by minimum time gap.
-HRESULT CCluster::MergeEvent()
+StatusCode CCluster::MergeEvent()
 {
 	int iEventlabel;
 	int iNextEventlabel;
@@ -316,7 +268,7 @@ HRESULT CCluster::MergeEvent()
 	double max_gap = 720 / TIME_INTERVAL;// if the time interval exceed a day, split.
 	int count = 0;
 	double timegap = 0;
-	HRESULT hr = S_OK;
+	StatusCode hr = StatusCode::OK;
 	// sort the photos by event.
 	map<int, int> EventMap; // eventLabel -> vecEventSet Index
 	vector<Photo_Feature_Set>* vecEventSet = new vector<Photo_Feature_Set>[m_iBestK_MDL];

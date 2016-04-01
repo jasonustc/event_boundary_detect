@@ -24,9 +24,9 @@ int PreSegment::CoarseCluster(int start, int end){
 	int countDayNum = 1;
 	for (size_t i = start; i < end; i++)
 	{
-		if (photos[i].SysTime.wDay != photos[i + 1].SysTime.wDay || 
-			photos[i].SysTime.wMonth != photos[i].SysTime.wMonth ||
-			photos[i].SysTime.wYear != photos[i].SysTime.wYear)
+		if (photos[i].SysTime.tm_mday != photos[i + 1].SysTime.tm_mday || 
+			photos[i].SysTime.tm_mon != photos[i].SysTime.tm_mon ||
+			photos[i].SysTime.tm_year != photos[i].SysTime.tm_year)
 		{
 			countDayNum++;
 		}

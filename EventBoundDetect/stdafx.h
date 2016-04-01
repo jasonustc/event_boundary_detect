@@ -44,12 +44,16 @@ enum class  StatusCode {
   OK = 0,
   Error = 1,
   InvalidArgs = 2,
+  OutOfMemory = 3,
+  PointerError = 4,
 
 };
+#define FAILED(hr) (hr != StatusCode::OK)
+#define SUCCEEDED(hr) (hr == StatusCode::OK)
 
-#ifndef SYSTEMTIME
-#define SYSTEMTIME struct tm
-#endif
+//#ifndef SYSTEMTIME
+//#define SYSTEMTIME struct tm
+//#endif
 
-#define __in
-#define __out
+#define IN
+#define OUT

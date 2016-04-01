@@ -10,35 +10,38 @@
 
 #include <vector>
 #include <string>
+#include <ctime>
 
+int GetDirectoryName(const string& filePath, string& dirName, string& fileName);
+bool MakeSubFolder(const string &parentFolder, const string& subFolder, string& fullFolderPath);
+bool CopyFileToFolder(const string& filePath, const string& folderPath);
 StatusCode GetSubFolders(const char *dir, std::vector<std::string> &sub_folders);
+StatusCode GetTxtFilesInDir(const char * wzTxtDir, std::vector<string>& vecTxtFile);
+void MakeDir(const string& dir);
+bool IsInSameFolder(const string& file1, const string& file2);
+bool FileExist(const string& filePath);
+time_t LastWriteTime(const string &file_path);
+
 StatusCode GetImageFilesInDir(const char * wzPicDir, std::vector<std::string>& vecPicFile);
 
-StatusCode GetFilesInDirWithExt(const char * wzTxtDir, std::vector<string>& vecTxtFile, string& ext);
-StatusCode GetTxtFilesInDir(const char * wzTxtDir, std::vector<string>& vecTxtFile);
+StatusCode GetFilesInDirWithExt(const char * wzTxtDir, const string& ext, std::vector<string>& vecTxtFile);
 //include .\ and all 1-level subfolders
 
-
-StatusCode GetAllLeafSubFolders_FullPath(char *wzDir, std::vector<std::string> &vSubFoldersLeaf);
-
-StatusCode GetAllImageFilesInSubfolders(
-	__in const char *wzDir,
-	__out std::vector<std::string> &vAllFiles,
-	__in bool bTestReadable = true);
-
-StatusCode GetAllFilesFromListFile(
-	__in const char *wzFileList,
-	__in const char *wzRoot,
-	__out std::vector<std::string> &vAllFiles,
-	__in bool bTestReadable = true);
-
-StatusCode DeleteAllFilesInFolder(char *wzDir);
-
-StatusCode GetFilename(const char* wzFilePath, std::string& filename);
-
-bool CopyFileToFolder(const string& filePath, const string& folderPath);
-bool MakeSubFolder(const string &parentFolder, const string& subFolder, string& fullFolderPath);
-int GetDirectoryName(const string& filePath, string& dirName, string& fileName);
-bool IsInSameFolder(const string& file1, const string& file2);
-bool GetFileNameAndExt(const string& filePath, string& fileName, string& ext);
-bool FileExist(const string& filePath);
+//StatusCode GetAllLeafSubFolders_FullPath(char *wzDir, std::vector<std::string> &vSubFoldersLeaf);
+//
+//StatusCode GetAllImageFilesInSubfolders(
+//    const char *wzDir,
+//    std::vector<std::string> &vAllFiles,
+//    bool bTestReadable = true);
+//
+//StatusCode GetAllFilesFromListFile(
+//    const char *wzFileList,
+//    const char *wzRoot,
+//    std::vector<std::string> &vAllFiles,
+//    bool bTestReadable = true);
+//
+//StatusCode DeleteAllFilesInFolder(char *wzDir);
+//
+//StatusCode GetFilename(const char* wzFilePath, std::string& filename);
+//
+//bool GetFileNameAndExt(const string& filePath, string& fileName, string& ext);

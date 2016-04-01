@@ -254,8 +254,8 @@ public:
 private:
 	StatusCode Preprocess();
 	StatusCode PreprocessNew();
-    double GetSecondTime(SYSTEMTIME SysTime);
-    StatusCode BuildIndex();
+  double GetSecondTime(struct tm* SysTime);
+  StatusCode BuildIndex();
 	StatusCode MergeEvent();
     void SortPhotos();
 	StatusCode EMtraining(Mat & usedSamples, bool use_gps);

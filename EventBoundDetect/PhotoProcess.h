@@ -52,15 +52,15 @@ public:
 protected:
 	void SortPhotos();
 	StatusCode LoadPhotos(const char* imgDir);
-	StatusCode GetTimeStampFromSinglePhoto(const string& imgPath, SYSTEMTIME& sysTime,
+	StatusCode GetTimeStampFromSinglePhoto(const string& imgPath, struct tm& sysTime,
 	double& longtitude, double& latitude, double& altitude);
-	StatusCode GetTimeStampFromSinglePhoto(const string& imgPath, SYSTEMTIME& sysTime,
+	StatusCode GetTimeStampFromSinglePhoto(const string& imgPath, struct tm& sysTime,
 		PhotoExifInfo& photoExifInfo);
-	double GetSecondTime(SYSTEMTIME SysTime);
+	double GetSecondTime(struct tm& SysTime);
 	StatusCode ProcessSortedPhotos(int bestPhotoNum);
 	//get the photos that need to be reclustered
 	bool GetReEventPhotos(const char* m_UsrDir);
-	bool LoadPhotoFeat(wstring& photoPath, Photo_Feature_Set& PhotoFeat);
+	bool LoadPhotoFeat(string& photoPath, Photo_Feature_Set& PhotoFeat);
 
 private:
 	//photos need to be clustered

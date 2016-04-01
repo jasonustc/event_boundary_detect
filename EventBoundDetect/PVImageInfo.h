@@ -17,7 +17,7 @@ private:
 
 	WORD       m_uImageWidth;     //photo width
 	WORD       m_uImageHeight;    //photo height
-	SYSTEMTIME m_stTakenDateTime; //photo's taken time
+	struct tm m_stTakenDateTime; //photo's taken time
 	DWORD      m_uThumbOffset;
 	DWORD      m_uThumbLength;
 	WORD       m_uThumbWidth;     //Thumbnail width
@@ -25,8 +25,6 @@ private:
 	char       m_tszFileName[MAX_PATH];	// Image File Name, add by Tao Mei
 
 private:
-	StatusCode GetFileCreationTime(struct tm& SysTime);
-
 	StatusCode GetString(int iOffset, int iCount, char *pszStr) const;
 	StatusCode GetUShort(int iOffset, WORD &refusRlt) const;
 	StatusCode GetUInt(int iOffset, DWORD &refuRlt) const;
@@ -39,11 +37,11 @@ public:
 	explicit CPVImageInfo();
 	~CPVImageInfo();
 
-	static StatusCode ExifDTToDateTime(char *pszExifDT, SYSTEMTIME *pst);
+	static StatusCode ExifDTToDateTime(const char *pszExifDT, struct tm *pst);
 	int GetImageHeight() const;
 	int GetImageWidth() const;
-	StatusCode GetDTOrig(SYSTEMTIME *pst) const;
-	StatusCode SetImageFile(char *ptszImgFile);
+	StatusCode GetDTOrig(struct tm *pst) const;
+	StatusCode SetImageFile(const char *ptszImgFile);
 	void GetThumbnail(int &iOffset, int &iLength, int &iWidth, int &iHeight);
 
 };
